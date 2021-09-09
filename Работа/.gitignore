@@ -1,0 +1,15 @@
+/data/cifar-10-batches-py/
+/data/cifar10/
+/data/cifar100/
+/data/FashionMNIST/
+/data/mnist/
+/data/cifar-10-python.tar.gz
+/runs/
+/venv/
+/остальное/
+/Работа/
+/plots.py
+/REED.py
+/REED1.py
+/testnet
+/data_load.py
