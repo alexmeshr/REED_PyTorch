@@ -53,8 +53,9 @@ args = parser.parse_args()
 tests = [0.1, 0.3, 0.5, 0.7, 0.8, 0.9]
 if __name__ == "__main__":
     accs = [0, 0, 0, 0, 0, 0]
-    notaccs = [0, 0, 0, 0, 0, 0]
-    noises = [0, 0, 0, 0, 0, 0]
+    recalls = [0, 0, 0, 0, 0, 0]
+    precisions = [0, 0, 0, 0, 0, 0]
+    Fs = [0, 0, 0, 0, 0, 0]
     for test in range(6):
         args.noise_rate = tests[test]
         dataset = ContrastiveLearningDataset(root_folder='data/')
@@ -108,11 +109,13 @@ if __name__ == "__main__":
                                  drop_last=False)
         classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
         # torch.save(classifier.state_dict(), './testnet')
-        acc, noise, notacc = check_model(classifier, train_loader, train_data, device)
+        acc, precision, recall, F1 = check_model(classifier, train_loader, train_data, device)
         accs[test] = acc
-        noises[test] = noise
-        notaccs[test] = notacc
+        precisions[test] = precision
+        recalls[test] = recall
+        Fs[test] = F1
     print(accs)
-    print(noises)
-    print(notaccs)
+    print(precisions)
+    print(recalls)
+    print(Fs)
 
