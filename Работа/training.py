@@ -17,11 +17,10 @@ def check_model(model, dataloader, data, device):
     model.eval()
     correct = np.zeros(len(dataloader) * dataloader.batch_size, dtype=np.bool_)
     i = 0
-    acc = 0
-    answ_corr = 0
-    data_corr = 0
-    noise = 0
-    notnoise = 0
+    TP = 0
+    FP = 0
+    TN = 0
+    FN = 0
     with torch.no_grad():
         for inputs, labels in dataloader:
             inputs = inputs.to(device)
@@ -33,27 +32,28 @@ def check_model(model, dataloader, data, device):
             #print("d",data.noise_or_not[i:i+64])
             for label, prediction in zip(labels, predictions):
                 answ = (label == prediction)
-                #print(answ, label, prediction, (label == prediction))
                 if answ:
-                    answ_corr += 1
-                    if not data.noise_or_not[i]:
-                      noise+=1
+                    if data.noise_or_not[i]:
+                        TP += 1
+                    else:
+                        FP += 1
+
                 else:
-                  if data.noise_or_not[i]:
-                    notnoise += 1
+                    if data.noise_or_not[i]:
+                        FN += 1
+                    else:
+                        TN += 1
                 correct[i] = answ
-                #print(data.noise_or_not[i])
-                if data.noise_or_not[i] == correct[i]:
-                  acc += 1
-                if data.noise_or_not[i]:
-                  data_corr+=1
                 i += 1
-    print(answ_corr, answ_corr / i)
-    print("acc: ", acc, acc / i)
-    print("noise: ", noise, noise/answ_corr)
-    print("not noise, but deleted: ", notnoise, notnoise/(i-answ_corr))
+    precision = TP/(TP + FP)
+    recall = TP/(TP + FN)
+    F1 = 2 * (recall * precision) / (recall + precision)
+    print("acc: ", TP + TN, (TP + TN) / i)
+    print("precision: ", precision)
+    print("recall: ", recall)
+    print("F1: ", F1)
     model.train(mode=was_training)
-    return acc / i, noise/answ_corr, notnoise/data_corr
+    return (TP + TN) / i, precision, recall, F1
 
 
 
