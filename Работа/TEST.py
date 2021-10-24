@@ -15,17 +15,18 @@ import random
 from data import *
 import argparse
 from transformer import *
-from cifar import *
+import cifar
 import mnist 
 from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
 from models.resnet_simclr import ResNetSimCLR
 from simclr import SimCLR
 from training import *
+from noisy_dataset import Noisy_Dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--initial_lr', type=float, help='initial learning rate', default=0.001)
 parser.add_argument('--momentum', type=float, help='weight_decay for training', default=0.9)
-parser.add_argument('--dataset', type=str, help='fashionmnist, cifar10, or cifar100', default='fashionmnist')
+parser.add_argument('--dataset', type=str, help='fashionmnist, cifar10, or cifar100', default='cifar10')
 parser.add_argument('--network', type=str, default='fixed fe')
 parser.add_argument('--resnet', help='resnet18 or resnet50', type=str, default='resnet18')
 parser.add_argument('--step_size', type=int, default=7)
@@ -75,38 +76,31 @@ if __name__ == "__main__":
         try:
             simclr.model.backbone.load_state_dict(torch.load('./simcrlnet'))
         except:
-          simclr.train(train_loader)
-          torch.save(simclr.model.backbone.state_dict(), './simcrlnet')
+          # simclr.train(train_loader)
+            torch.save(simclr.model.backbone.state_dict(), './simcrlnet')
         simclr.model.remove_projection_head()
 
         if args.dataset == 'cifar10':
             args.num_classes = 10
-            train_data = cifar.CIFAR10(root='data/', train=True,
-                                       transform=transform_train(args.dataset),
-                                       download=True,
-                                       noise_type='symmetric', noise_rate=args.noise_rate, random_state=0)
+            #train_data = cifar.CIFAR10(root='data/', train=True,
+            #                           transform=transform_train(args.dataset),
+            #                           download=True,
+            #                           noise_type='symmetric', noise_rate=args.noise_rate, random_state=0)
             test_data = torchvision.datasets.CIFAR10(root='data/', train=True, download=True,
                                                      transform=transform_train(args.dataset))
 
         if args.dataset == 'fashionmnist':
             args.num_classes = 10
-            train_data = mnist.MNIST(root='/data/FashionMNIST', train=True,
-                                       transform=transform_train(args.dataset),
-                                       download=True,
-                                       noise_type='symmetric', noise_rate=args.noise_rate, random_state=0)
             test_data = torchvision.datasets.FashionMNIST(root='data/', train=True, download=True,
-                                                     transform=transform_train(args.dataset))
-
+                                                          transform=transform_train(args.dataset))
+        train_data = Noisy_Dataset(test_data, transform=transform_train(args.dataset),
+                                   noise_type='symmetric', noise_rate=args.noise_rate, random_state=0,
+                                   num_classes=args.num_classes)
         train_loader = DataLoader(dataset=train_data,
                                   batch_size=args.batch_size,
                                   shuffle=False,
                                   num_workers=args.workers,
                                   drop_last=False)
-        test_loader = DataLoader(dataset=test_data,
-                                 batch_size=args.batch_size,
-                                 shuffle=True,
-                                 num_workers=args.workers,
-                                 drop_last=False)
         classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
         # torch.save(classifier.state_dict(), './testnet')
         acc, precision, recall, F1 = check_model(classifier, train_loader, train_data, device)
