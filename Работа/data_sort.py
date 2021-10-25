@@ -15,7 +15,7 @@ def sort_data(model, dataloader, device, args):
         for inputs, targets in dataloader:
             inputs, targets = inputs.cuda(), targets.cuda()
             outputs = model(inputs).cpu().numpy()
-            outputs = np.array([softmax(output.numpy()) for output in outputs])
+            outputs = torch.tensor([softmax(output) for output in outputs])
             np.append(p_array, outputs)
             loss = CE(outputs, targets)
             for b in range(inputs.size(0)):
