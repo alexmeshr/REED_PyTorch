@@ -12,7 +12,7 @@ def sort_data(model, dataloader, device, args):
     CE = nn.CrossEntropyLoss(reduction='none')
     with torch.no_grad():
         index = 0
-        for inputs, targets in enumerate(dataloader):
+        for inputs, targets in dataloader:
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             outputs = np.array([softmax(output) for output in outputs])
