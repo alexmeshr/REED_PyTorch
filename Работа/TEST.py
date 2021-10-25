@@ -46,6 +46,9 @@ parser.add_argument('--log-every-n-steps', default=100, type=int,
 parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--imsize', type=int, default=28)
+parser.add_argument('--p_threshold', type=float, default=0.5)
+parser.add_argument('--testing', type=bool, default=True)
+
 # parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 
 # parser.add_argument('--out_dim', default=128, type=int, help='feature dimension (default: 128)')
@@ -74,9 +77,9 @@ if __name__ == "__main__":
                                                                last_epoch=-1)
         simclr = SimCLR(device=device, model=model, optimizer=optimizer, scheduler=scheduler, args=args)
         try:
-            simclr.model.backbone.load_state_dict(torch.load('./simcrlnet'))
+            simclr.model.backbone.load_state_dict(torch.load('/content/drive/MyDrive/Работа/simcrlnet18'))
         except:
-          # simclr.train(train_loader)
+            simclr.train(train_loader)
             torch.save(simclr.model.backbone.state_dict(), './simcrlnet')
         simclr.model.remove_projection_head()
 
@@ -103,7 +106,7 @@ if __name__ == "__main__":
                                   drop_last=False)
         classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
         # torch.save(classifier.state_dict(), './testnet')
-        acc, precision, recall, F1 = check_model(classifier, train_loader, train_data, device)
+        acc, precision, recall, F1 = check_model(classifier, train_loader, device, args)
         accs[test] = acc
         precisions[test] = precision
         recalls[test] = recall
