@@ -12,7 +12,7 @@ import random
 from data import *
 import numpy as np
 
-def check_model(model, dataloader, data, device):
+def check_model(model, dataloader, device):
     was_training = model.training
     model.eval()
     correct = np.zeros(len(dataloader) * dataloader.batch_size, dtype=np.bool_)
@@ -33,13 +33,13 @@ def check_model(model, dataloader, data, device):
             for label, prediction in zip(labels, predictions):
                 answ = (label == prediction)
                 if answ:
-                    if data.noise_or_not[i]:
+                    if dataloader.dataset.data.noise_or_not[i]:
                         TP += 1
                     else:
                         FP += 1
 
                 else:
-                    if data.noise_or_not[i]:
+                    if dataloader.dataset.data.noise_or_not[i]:
                         FN += 1
                     else:
                         TN += 1

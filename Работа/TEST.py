@@ -32,7 +32,7 @@ parser.add_argument('--resnet', help='resnet18 or resnet50', type=str, default='
 parser.add_argument('--step_size', type=int, default=7)
 parser.add_argument('--gamma', type=float, default=0.1)
 parser.add_argument('--simcrl_epochs', type=int, default=20)
-parser.add_argument('--epochs', type=int, default=3)  # 25!!!
+parser.add_argument('--epochs', type=int, default=1)  # 25!!!
 parser.add_argument('--num_classes', type=int, default=10)
 parser.add_argument('--noise_rate', type=float, default=0.4)
 parser.add_argument('--seed', type=int, default=1)
@@ -104,10 +104,15 @@ if __name__ == "__main__":
                                   shuffle=False,
                                   num_workers=args.workers,
                                   drop_last=False)
-        classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
-        # torch.save(classifier.state_dict(), './testnet')
+        classifier = simclr.model.backbone
+        try:
+            classifier.load_state_dict(torch.load('/content/drive/MyDrive/Работа/testnet'))
+            classifier = classifier.to(device)
+        except:
+            classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
+            torch.save(classifier.state_dict(), './testnet')
         sort_data(classifier, train_loader, device, args)
-        """acc, precision, recall, F1 = check_model(classifier, train_loader, device, args)
+        """acc, precision, recall, F1 = check_model(classifier, train_loader, device)
         accs[test] = acc
         precisions[test] = precision
         recalls[test] = recall
