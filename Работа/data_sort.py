@@ -13,9 +13,7 @@ def sort_data(model, dataloader, device, args):
     with torch.no_grad():
         index = 0
         for inputs, targets in dataloader:
-            print(inputs, targets)
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+            inputs, targets = inputs.cuda(), targets.cuda()
             outputs = model(inputs)
             outputs = np.array([softmax(output) for output in outputs])
             np.append(p_array, outputs)
