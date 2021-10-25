@@ -26,7 +26,7 @@ from  data_sort import *
 parser = argparse.ArgumentParser()
 parser.add_argument('--initial_lr', type=float, help='initial learning rate', default=0.001)
 parser.add_argument('--momentum', type=float, help='weight_decay for training', default=0.9)
-parser.add_argument('--dataset', type=str, help='fashionmnist, cifar10, or cifar100', default='cifar10')
+parser.add_argument('--dataset', type=str, help='fashionmnist, cifar10, or cifar100', default='fashionmnist')
 parser.add_argument('--network', type=str, default='fixed fe')
 parser.add_argument('--resnet', help='resnet18 or resnet50', type=str, default='resnet18')
 parser.add_argument('--step_size', type=int, default=7)
@@ -37,7 +37,7 @@ parser.add_argument('--num_classes', type=int, default=10)
 parser.add_argument('--noise_rate', type=float, default=0.4)
 parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--workers', type=int, default=16, help='how many subprocesses to use for data loading')  # 4!!!
-parser.add_argument('--batch_size', type=int, default=512)
+parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)',
                     dest='weight_decay')
