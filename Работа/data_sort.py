@@ -3,7 +3,7 @@ import numpy as np
 import torch.nn as nn
 from sklearn.mixture import GaussianMixture
 from scipy.special import softmax
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 def sort_data(model, dataloader, device, args):
     was_training = model.training
