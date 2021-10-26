@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 from sklearn.mixture import GaussianMixture
 from scipy.special import softmax
+import matplotlib as plt
 
 def sort_data(model, dataloader, device, args):
     was_training = model.training
@@ -15,13 +16,19 @@ def sort_data(model, dataloader, device, args):
         for inputs, targets in dataloader:
             inputs, targets = inputs.cuda(), targets.cuda()
             outputs = model(inputs).cpu().numpy()
-            outputs = torch.tensor([softmax(output) for output in outputs])
-            np.append(p_array, outputs)
+            outputs = np.array([softmax(output) for output in outputs])
+            for output in outputs:
+              p_array = np.append(p_array, output)
+            outputs =torch.tensor(outputs).cuda()
             loss = CE(outputs, targets)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
                 index += 1
     losses = (losses - losses.min()) / (losses.max() - losses.min())
+    fig, ax = plt.subplots(figsize=(10, 6))
+    x = [x for x in range(len(losses))]
+    ax.scatter(x = x, y=losses)
+    plt.show()
     input_loss = losses.reshape(-1, 1)
     # fit a two-component GMM to the loss
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
@@ -29,14 +36,14 @@ def sort_data(model, dataloader, device, args):
     prob1 = gmm1.predict_proba(input_loss)
     prob1 = prob1[:, gmm1.means_.argmin()]
     p_clean = (prob1 > args.p_threshold)
-    print("p_clean: ", p_clean)
-
+    print("p_clean: ", prob1)
+    p_array = p_array.reshape(-1, 1)
     gmm2 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm2.fit(p_array)
     prob2 = gmm2.predict_proba(p_array)
     prob2 = prob2[:, gmm2.means_.argmin()]
-    p_right = (prob1 > args.p_threshold)
-    print("p_right: ", p_right)
+    p_right = (prob2 > args.p_threshold)
+    print("p_right: ", prob2)
     all_data = np.array(list(zip(dataloader.dataset.data, dataloader.dataset.targets)))
     correct = np.zeros(len(dataloader.dataset.data), dtype=np.bool_)
     i = 0
