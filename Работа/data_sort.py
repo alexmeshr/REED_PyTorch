@@ -26,7 +26,7 @@ def sort_data(model, dataloader, device, args):
                 index += 1
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     fig, ax = plt.subplots(figsize=(10, 6))
-    x = [x for x in range(len(100))]
+    x = [x for x in range(100)]
     ax.scatter(x = x, y=p_array[:100])
     print("p_array: ", p_array)
     plt.show()
