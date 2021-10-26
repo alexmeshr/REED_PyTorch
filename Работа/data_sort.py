@@ -26,8 +26,9 @@ def sort_data(model, dataloader, device, args):
                 index += 1
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     fig, ax = plt.subplots(figsize=(10, 6))
-    x = [x for x in range(len(losses))]
-    ax.scatter(x = x, y=losses)
+    x = [x for x in range(len(p_array))]
+    ax.scatter(x = x, y=p_array)
+    print("p_array")
     plt.show()
     input_loss = losses.reshape(-1, 1)
     # fit a two-component GMM to the loss
