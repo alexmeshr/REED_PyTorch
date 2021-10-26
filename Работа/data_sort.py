@@ -30,7 +30,9 @@ def sort_data(model, dataloader, device, args):
     ax.scatter(x = x, y=p_array[:1000])
     print("p_array: ", p_array)
     plt.show()
+    print(losses)
     input_loss = losses.reshape(-1, 1)
+    print(input_loss, input_loss.shape)
     # fit a two-component GMM to the loss
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm1.fit(input_loss)
@@ -43,7 +45,7 @@ def sort_data(model, dataloader, device, args):
     gmm2.fit(p_array)
     prob2 = gmm2.predict_proba(p_array)
     prob2 = prob2[:, gmm2.means_.argmin()]
-    p_right = (prob2 > args.p_threshold)
+    p_right = (prob2 > args.p_right)
     print("p_right: ", prob2)
     all_data = np.array(list(zip(dataloader.dataset.data, dataloader.dataset.targets)))
     correct = np.zeros(len(dataloader.dataset.data), dtype=np.bool_)

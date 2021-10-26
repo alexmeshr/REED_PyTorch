@@ -47,6 +47,7 @@ parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--imsize', type=int, default=28)
 parser.add_argument('--p_threshold', type=float, default=0.5)
+parser.add_argument('--p_right', type=float, default=0.5)
 parser.add_argument('--testing', type=bool, default=True)
 
 # parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
