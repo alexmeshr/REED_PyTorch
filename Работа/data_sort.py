@@ -9,6 +9,7 @@ def sort_data(model, dataloader, device, args):
     was_training = model.training
     model.eval()
     losses = torch.zeros(len(dataloader.dataset.data))
+    p_max = torch.zeros(len(dataloader.dataset.data))
     p_array = np.array([])
     CE = nn.CrossEntropyLoss(reduction='none')
     with torch.no_grad():
@@ -23,6 +24,7 @@ def sort_data(model, dataloader, device, args):
             loss = CE(outputs, targets)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
+                p_max[index] = torch.max(outputs[b], 1)
                 index += 1
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -31,7 +33,8 @@ def sort_data(model, dataloader, device, args):
     plt.show()
     print(losses)
     input_loss = losses.reshape(-1, 1)
-    print("input_loss:", input_loss, input_loss.shape)
+    p_max = p_max.reshape(-1, 1)
+    print("p_max:", p_max, p_max.shape)
     # fit a two-component GMM to the loss
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm1.fit(input_loss)
@@ -44,13 +47,13 @@ def sort_data(model, dataloader, device, args):
     print("p_array: ", p_array, p_array.shape)
     gmm2 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm2.fit(p_array)
-    prob2 = gmm2.predict_proba(p_array)
+    prob2 = gmm2.predict_proba(p_max)
     prob2 = prob2[:, gmm2.means_.argmin()]
     p_right = (prob2 > args.p_right)
     print("p_right: ", prob2)
     for x in range(1000):
         if prob2[x] < 0.9:
-            print(x, prob2[x], p_array[x])
+            print(x, prob2[x], p_max[x])
     all_data = np.array(list(zip(dataloader.dataset.data, dataloader.dataset.targets)))
     correct = np.zeros(len(dataloader.dataset.data), dtype=np.bool_)
     i = 0
