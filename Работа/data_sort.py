@@ -10,7 +10,7 @@ def sort_data(model, dataloader, device, args):
     model.eval()
     losses = torch.zeros(len(dataloader.dataset.data))
     p_max = torch.zeros(len(dataloader.dataset.data))
-    p_array = np.array([])
+    #p_array = np.array([])
     CE = nn.CrossEntropyLoss(reduction='none')
     with torch.no_grad():
         index = 0
@@ -18,8 +18,8 @@ def sort_data(model, dataloader, device, args):
             inputs, targets = inputs.cuda(), targets.cuda()
             outputs = model(inputs).cpu().numpy()
             outputs = np.array([softmax(output) for output in outputs])
-            for output in outputs:
-              p_array = np.append(p_array, output)
+            #for output in outputs:
+              #p_array = np.append(p_array, output)
             outputs =torch.tensor(outputs).cuda()
             loss = CE(outputs, targets)
             predictions,_ = torch.max(outputs, 1)
@@ -43,11 +43,11 @@ def sort_data(model, dataloader, device, args):
     prob1 = prob1[:, gmm1.means_.argmin()]
     p_clean = (prob1 > args.p_threshold)
     print("p_clean: ", prob1)
-    p_array = torch.tensor(p_array)
-    p_array = p_array.reshape(-1, 1)
-    print("p_array: ", p_array, p_array.shape)
+    #p_array = torch.tensor(p_array)
+    #p_array = p_array.reshape(-1, 1)
+    #print("p_array: ", p_array, p_array.shape)
     gmm2 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
-    gmm2.fit(p_array)
+    gmm2.fit(p_max)
     prob2 = gmm2.predict_proba(p_max)
     prob2 = prob2[:, gmm2.means_.argmin()]
     p_right = (prob2 > args.p_right)
