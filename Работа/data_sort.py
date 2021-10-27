@@ -53,7 +53,7 @@ def sort_data(model, dataloader, device, args):
     p_right = (prob2 > args.p_right)
     print("p_right: ", prob2)
     for x in range(10000):
-        if p_right[x]:
+        if not p_right[x]:
             print(x, prob2[x], p_max[x])
     all_data = np.array(list(zip(dataloader.dataset.data, dataloader.dataset.targets)))
     correct = np.zeros(len(dataloader.dataset.data), dtype=np.bool_)
