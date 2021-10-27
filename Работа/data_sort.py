@@ -24,7 +24,8 @@ def sort_data(model, dataloader, device, args):
             loss = CE(outputs, targets)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
-                p_max[index] = torch.max(outputs[b], 1)
+                #p_max[index] = torch.max(outputs[b], 1)
+                print(outputs[b])
                 index += 1
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     fig, ax = plt.subplots(figsize=(10, 6))
