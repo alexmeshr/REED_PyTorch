@@ -22,7 +22,7 @@ def sort_data(model, dataloader, device, args):
               p_array = np.append(p_array, output)
             outputs =torch.tensor(outputs).cuda()
             loss = CE(outputs, targets)
-            _, predictions = torch.max(outputs, 1)
+            predictions,_ = torch.max(outputs, 1)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
                 p_max[index] = predictions[b]
