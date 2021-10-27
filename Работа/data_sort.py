@@ -39,6 +39,7 @@ def sort_data(model, dataloader, device, args):
     prob1 = prob1[:, gmm1.means_.argmin()]
     p_clean = (prob1 > args.p_threshold)
     print("p_clean: ", prob1)
+    p_array = torch.tensor(p_array)
     p_array = p_array.reshape(-1, 1)
     print("p_array: ", p_array, p_array.shape)
     gmm2 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
