@@ -27,12 +27,11 @@ def sort_data(model, dataloader, device, args):
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     fig, ax = plt.subplots(figsize=(10, 6))
     x = [x for x in range(1000)]
-    ax.scatter(x = x, y=p_array[:1000])
-    print("p_array: ", p_array)
+    ax.scatter(x = x, y=losses[:1000])
     plt.show()
     print(losses)
     input_loss = losses.reshape(-1, 1)
-    print(input_loss, input_loss.shape)
+    print("input_loss:", input_loss, input_loss.shape)
     # fit a two-component GMM to the loss
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm1.fit(input_loss)
@@ -41,6 +40,7 @@ def sort_data(model, dataloader, device, args):
     p_clean = (prob1 > args.p_threshold)
     print("p_clean: ", prob1)
     p_array = p_array.reshape(-1, 1)
+    print("p_array: ", p_array, p_array.shape)
     gmm2 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm2.fit(p_array)
     prob2 = gmm2.predict_proba(p_array)
