@@ -9,7 +9,10 @@ def sort_data(model, dataloader, device, args):
     was_training = model.training
     model.eval()
     losses = torch.zeros(len(dataloader.dataset.data))
+    p_i = torch.zeros(args.num_classes, len(dataloader.dataset.data)//args.num_classes)
+    index_i = torch.zeros(args.num_classes)
     p_max = torch.zeros(len(dataloader.dataset.data))
+    idx_max = torch.zeros(len(dataloader.dataset.data))
     #p_array = np.array([])
     CE = nn.CrossEntropyLoss(reduction='none')
     with torch.no_grad():
@@ -22,21 +25,26 @@ def sort_data(model, dataloader, device, args):
               #p_array = np.append(p_array, output)
             outputs =torch.tensor(outputs).cuda()
             loss = CE(outputs, targets)
-            predictions,_ = torch.max(outputs, 1)
+            predictions, nums = torch.max(outputs, 1)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
+                p_i[nums[b]][index_i[b]] = predictions[b]
+                index_i[b]+=1
                 p_max[index] = predictions[b]
+                idx_max[index] = nums[b]
                 index += 1
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     fig, ax = plt.subplots(figsize=(10, 6))
-    x = [x for x in range(1000)]
-    ax.scatter(x = x, y=losses[:1000])
-    plt.show()
+    #x = [x for x in range(1000)]
+    #ax.scatter(x = x, y=p_max[:1000])
+    #plt.show()
     print(losses)
     input_loss = losses.reshape(-1, 1)
-    p_max = p_max.reshape(-1, 1)
-    print("p_max:", p_max, p_max.shape)
-    # fit a two-component GMM to the loss
+    #p_max = p_max.reshape(-1, 1)
+    #print("p_max:", p_max, p_max.shape)
+    print("p_i:", p_i, p_i.shape)
+    p_i = [p_i[x].reshape(-1,1) for x in p_i]
+    print("p_i:", p_i, p_i.shape)
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm1.fit(input_loss)
     prob1 = gmm1.predict_proba(input_loss)
@@ -46,10 +54,14 @@ def sort_data(model, dataloader, device, args):
     #p_array = torch.tensor(p_array)
     #p_array = p_array.reshape(-1, 1)
     #print("p_array: ", p_array, p_array.shape)
-    gmm2 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
-    gmm2.fit(p_max)
-    prob2 = gmm2.predict_proba(p_max)
-    prob2 = prob2[:, gmm2.means_.argmin()]
+    gmm2 = [GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4) for x in range(args.num_classes)]
+    for i in range(args.num_classes):
+        gmm2[i].fit(p_i[i])
+    prob2 = torch.zeros(len(dataloader.dataset.data))
+    for j in range(len(dataloader.dataset.data)):
+        prob2[j] = gmm2[idx_max[j]].predict_proba(p_max[j])[0][gmm2[idx_max[j]].means_.argmin()]
+    #prob2 = gmm2.predict_proba(p_max)
+    #prob2 = prob2[:, gmm2.means_.argmin()]
     p_right = (prob2 > args.p_right)
     print("p_right: ", prob2)
     for x in range(10000):

@@ -55,7 +55,7 @@ parser.add_argument('--testing', type=bool, default=True)
 # parser.add_argument('--out_dim', default=128, type=int, help='feature dimension (default: 128)')
 
 args = parser.parse_args()
-tests = [0.1, 0.3, 0.5, 0.7, 0.8, 0.9]
+tests = [0.,9, 0.8, 0.5, 0.7, 0.3, 0.9]
 if __name__ == "__main__":
     accs = [0, 0, 0, 0, 0, 0]
     recalls = [0, 0, 0, 0, 0, 0]
