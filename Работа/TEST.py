@@ -56,7 +56,7 @@ parser.add_argument('--testing', type=bool, default=True)
 
 args = parser.parse_args()
 tests = [0.,9, 0.8, 0.5, 0.7, 0.3, 0.9]
-if __name__ == "__main__":
+def test_():
     accs = [0, 0, 0, 0, 0, 0]
     recalls = [0, 0, 0, 0, 0, 0]
     precisions = [0, 0, 0, 0, 0, 0]
@@ -122,4 +122,5 @@ if __name__ == "__main__":
     print(precisions)
     print(recalls)
     print(Fs)"""
-
+if __name__ == "__main__":
+  test_()
