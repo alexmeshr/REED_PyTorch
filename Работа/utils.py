@@ -66,7 +66,7 @@ def noisify_multiclass_symmetric(y_train, noise, random_state=None, nb_classes=1
     P = np.ones((nb_classes, nb_classes))
     n = noise
     P = (n / (nb_classes - 1)) * P
-
+    print(n)
     if n > 0.0:
         # 0 -> 1
         P[0, 0] = 1. - n
@@ -80,9 +80,9 @@ def noisify_multiclass_symmetric(y_train, noise, random_state=None, nb_classes=1
         assert actual_noise > 0.0
         print('Actual noise %.2f' % actual_noise)
         y_train = y_train_noisy
-#    print (P)
-
-    return y_train, actual_noise
+        return y_train, actual_noise
+    else:
+        return y_train
 
 def noisify(dataset='mnist', nb_classes=10, train_labels=None, noise_type=None, noise_rate=0, random_state=0):
     if noise_type == 'pairflip':
