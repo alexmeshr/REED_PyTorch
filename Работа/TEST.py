@@ -55,12 +55,16 @@ parser.add_argument('--testing', type=bool, default=True)
 # parser.add_argument('--out_dim', default=128, type=int, help='feature dimension (default: 128)')
 
 args, unknown = parser.parse_known_args()
-tests = [0.,9, 0.8, 0.5, 0.7, 0.3, 0.9]
+tests = [0, 0.3, 0.5, 0.7, 0.8, 0.9]
 def test_(args):
     accs = [0, 0, 0, 0, 0, 0]
     recalls = [0, 0, 0, 0, 0, 0]
     precisions = [0, 0, 0, 0, 0, 0]
     Fs = [0, 0, 0, 0, 0, 0]
+    accs_new = [0, 0, 0, 0, 0, 0]
+    recalls_new = [0, 0, 0, 0, 0, 0]
+    precisions_new = [0, 0, 0, 0, 0, 0]
+    Fs_new = [0, 0, 0, 0, 0, 0]
     for test in range(6):
         args.noise_rate = tests[test]
         dataset = ContrastiveLearningDataset(root_folder='data/')
@@ -112,15 +116,25 @@ def test_(args):
         except:
             classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
             torch.save(classifier.state_dict(), './testnet')
-        sort_data(classifier, train_loader, device, args)
-        """acc, precision, recall, F1 = check_model(classifier, train_loader, device)
+        acc, precision, recall, F1 = check_model(classifier, train_loader, device)
         accs[test] = acc
         precisions[test] = precision
         recalls[test] = recall
         Fs[test] = F1
+        acc_new, precision_new, recall_new, F1_new = sort_data(classifier, train_loader, device, args)
+        accs_new[test] = acc_new
+        precisions_new[test] = precision_new
+        recalls_new[test] = recall_new
+        Fs_new[test] = F1_new
+    print("old:")
     print(accs)
     print(precisions)
     print(recalls)
-    print(Fs)"""
+    print(Fs)
+    print("new:")
+    print(accs_new)
+    print(precisions_new)
+    print(recalls_new)
+    print(Fs_new)
 if __name__ == "__main__":
   test_(args)

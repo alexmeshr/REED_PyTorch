@@ -82,7 +82,7 @@ def noisify_multiclass_symmetric(y_train, noise, random_state=None, nb_classes=1
         y_train = y_train_noisy
         return y_train, actual_noise
     else:
-        return y_train
+        return y_train, 0
 
 def noisify(dataset='mnist', nb_classes=10, train_labels=None, noise_type=None, noise_rate=0, random_state=0):
     if noise_type == 'pairflip':

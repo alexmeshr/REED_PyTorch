@@ -9,10 +9,10 @@ def sort_data(model, dataloader, device, args):
     was_training = model.training
     model.eval()
     losses = torch.zeros(len(dataloader.dataset.data))
-    p_i = torch.zeros(args.num_classes, len(dataloader.dataset.data)//args.num_classes)
+    p_i = torch.zeros(args.num_classes, len(dataloader.dataset.data))
     index_i = torch.zeros(args.num_classes)
     p_max = torch.zeros(len(dataloader.dataset.data))
-    idx_max = torch.zeros(len(dataloader.dataset.data))
+    answers = torch.zeros(len(dataloader.dataset.data))
     #p_array = np.array([])
     CE = nn.CrossEntropyLoss(reduction='none')
     with torch.no_grad():
@@ -28,23 +28,18 @@ def sort_data(model, dataloader, device, args):
             predictions, nums = torch.max(outputs, 1)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
-                p_i[nums[b]][index_i[b]] = predictions[b]
-                index_i[b]+=1
+                p_i[int(nums[b])][int(index_i[int(nums[b])])] = predictions[b]
+                index_i[int(nums[b])] += 1
                 p_max[index] = predictions[b]
-                idx_max[index] = nums[b]
+                answers[index] = nums[b]
                 index += 1
+    p_i = [i[i!=0] for i in p_i]
     losses = (losses - losses.min()) / (losses.max() - losses.min())
-    fig, ax = plt.subplots(figsize=(10, 6))
-    #x = [x for x in range(1000)]
-    #ax.scatter(x = x, y=p_max[:1000])
-    #plt.show()
-    print(losses)
+    #print(losses)
     input_loss = losses.reshape(-1, 1)
-    #p_max = p_max.reshape(-1, 1)
-    #print("p_max:", p_max, p_max.shape)
-    print("p_i:", p_i, p_i.shape)
-    p_i = [p_i[x].reshape(-1,1) for x in p_i]
-    print("p_i:", p_i, p_i.shape)
+    #print("p_i:", p_i)
+    p_i = [i.reshape(-1,1) for i in p_i]
+    #print("p_i:", p_i)
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm1.fit(input_loss)
     prob1 = gmm1.predict_proba(input_loss)
@@ -59,53 +54,53 @@ def sort_data(model, dataloader, device, args):
         gmm2[i].fit(p_i[i])
     prob2 = torch.zeros(len(dataloader.dataset.data))
     for j in range(len(dataloader.dataset.data)):
-        prob2[j] = gmm2[idx_max[j]].predict_proba(p_max[j])[0][gmm2[idx_max[j]].means_.argmin()]
+        prob2[j] = gmm2[int(answers[j])].predict_proba([[p_max[j]]])[0][gmm2[int(answers[j])].means_.argmin()]
     #prob2 = gmm2.predict_proba(p_max)
     #prob2 = prob2[:, gmm2.means_.argmin()]
-    p_right = (prob2 > args.p_right)
+    p_right = (prob2 >= args.p_right)
+    p_wrong = (prob2 <args.p_right)
     print("p_right: ", prob2)
-    for x in range(10000):
-        if not p_right[x]:
-            print(x, prob2[x], p_max[x])
-    all_data = np.array(list(zip(dataloader.dataset.data, dataloader.dataset.targets)))
-    correct = np.zeros(len(dataloader.dataset.data), dtype=np.bool_)
-    i = 0
-    TP = 0
-    FP = 0
-    TN = 0
-    FN = 0
-    """
-    with torch.no_grad():
-        for inputs, labels in dataloader:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-            outputs = model(inputs)
-            _, predictions = torch.max(outputs, 1)
-            for label, prediction in zip(labels, predictions):
-                if (pred[i]):
-                    all_data[i] = prediction
-
-
-                answ = (label == prediction)
-                if answ:
-                    if dataloader.dataset.data.noise_or_not[i]:
-                        TP += 1
-                    else:
-                        FP += 1
-
+    #for x in range(10000):
+    #    if p_right[x]:
+    #        print(x, prob2[x], p_max[x])
+    fig, (ax, ax2) = plt.subplots(2,1, figsize=(10, 8))
+    x = [x for x in range(1000)]
+    ax.scatter(x = x, y=p_max[p_right][:1000], c = 'g', label='P_right')
+    ax.scatter(x = x, y=p_max[p_wrong][:1000], c = 'r', label='not P_right')
+    plt.legend(loc='upper right')
+    ax2.scatter(x = x, y=p_max[p_clean][:1000], c = 'b', label='P_clean')
+    ax2.scatter(x = x, y=p_max[np.bitwise_not(p_clean)][:1000], c = 'y', label='not P_clean')
+    plt.legend(loc='upper right')
+    plt.show()
+    new_targets =  np.zeros(len(dataloader.dataset.data))
+    for i in range(len(dataloader.dataset.data)):
+        if p_right[i] or ((not p_clean[i]) and (answers[i] == dataloader.dataset.targets[i])):
+            new_targets[i] = answers[i]
+        else:
+            new_targets[i] = -1
+    if args.testing:
+        correct = dataloader.dataset.original_targets
+        TP = 0
+        FP = 0
+        TN = 0
+        FN = 0
+        for i in range(len(dataloader.dataset.data)):
+            if new_targets[i] != -1:
+                if new_targets[i] == correct[i]:
+                    TP+=1
                 else:
-                    if dataloader.dataset.data.noise_or_not[i]:
-                        FN += 1
-                    else:
-                        TN += 1
-                correct[i] = answ
-                i += 1
-    precision = TP/(TP + FP)
-    recall = TP/(TP + FN)
-    F1 = 2 * (recall * precision) / (recall + precision)
-    print("acc: ", TP + TN, (TP + TN) / i)
-    print("precision: ", precision)
-    print("recall: ", recall)
-    print("F1: ", F1)"""
-    model.train(mode=was_training)
-    return (TP + TN)# / i, precision, recall, F1
+                    FP+=1
+            else:
+                if answers[i] == correct[i]:
+                    FN+=1
+                else:
+                    TN+=1
+        precision = TP/(TP + FP)
+        recall = TP/(TP + FN)
+        F1 = 2 * (recall * precision) / (recall + precision)
+        print("acc: ", TP + TN, (TP + TN) / i)
+        print("precision: ", precision)
+        print("recall: ", recall)
+        print("F1: ", F1)
+        model.train(mode=was_training)
+    return (TP + TN) / i, precision, recall, F1
