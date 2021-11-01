@@ -71,8 +71,6 @@ def sort_data(model, dataloader, device, args):
     prob2 = torch.zeros(len(dataloader.dataset.data))
     for j in range(len(dataloader.dataset.data)):
         prob2[j] = gmm2[int(answers[j])].predict_proba([[p_max[j]]])[0][gmm2[int(answers[j])].means_.argmin()]
-    prob2 = gmm2.predict_proba(p_max)
-    prob2 = prob2[:, gmm2.means_.argmin()]
     p_right = (prob2 > args.p_right)
     #p_wrong = (prob2 <= args.p_right)
     #print("p_right: ", prob2)
