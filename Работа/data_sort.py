@@ -52,7 +52,7 @@ def sort_data(model, dataloader, device, args):
                 #p_i[int(nums[b])][int(index_i[int(nums[b])])] = predictions[b]
                 #index_i[int(nums[b])] += 1
                 p_max[index] = predictions[b]
-                #answers[index] = nums[b]
+                answers[index] = nums[b]
                 index += 1
     #p_i = [i[i!=0] for i in p_i]
     losses = (losses - losses.min()) / (losses.max() - losses.min())
@@ -76,7 +76,7 @@ def sort_data(model, dataloader, device, args):
     new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
         if p_clean[i]:  # or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
-            new_targets[i] = dataloader.dataset.targets[i]
+            new_targets[i] = answers[i]
         else:
             new_targets[i] = -1
     print(new_targets)
