@@ -23,6 +23,7 @@ def warmup(net , dataloader, args):
 
 def sort_data(model, dataloader, device, args):
     for i in range(args.warm_up):
+        print("  ", i)
         warmup(model, dataloader, args)
     was_training = model.training
     model.eval()
