@@ -20,12 +20,12 @@ def sort_data(model, dataloader, device, args):
         for inputs, targets in dataloader:
             inputs, targets = inputs.cuda(), targets.cuda()
             outputs = model(inputs).cpu().numpy()
-            outputs = np.array([softmax(output) for output in outputs])
+            outputs_p = np.array([softmax(output) for output in outputs])
             #for output in outputs:
               #p_array = np.append(p_array, output)
-            outputs =torch.tensor(outputs).cuda()
+            outputs_p =torch.tensor(outputs_p).cuda()
             loss = CE(outputs, targets)
-            predictions, nums = torch.max(outputs, 1)
+            predictions, nums = torch.max(outputs_p, 1)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
                 p_i[int(nums[b])][int(index_i[int(nums[b])])] = predictions[b]
@@ -41,7 +41,7 @@ def sort_data(model, dataloader, device, args):
     gmm1.fit(input_loss)
     prob1 = gmm1.predict_proba(input_loss)
     prob1 = prob1[:, gmm1.means_.argmin()]
-    p_clean = (prob1 > args.p_threshold)
+    p_clean = (prob1 >= args.p_threshold)
     print("p_clean: ", prob1)
     #p_array = torch.tensor(p_array)
     #p_array = p_array.reshape(-1, 1)
