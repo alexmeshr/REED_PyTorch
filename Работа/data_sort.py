@@ -6,16 +6,15 @@ from scipy.special import softmax
 import matplotlib.pyplot as plt
 import torch.optim as optim
 
-CE = nn.CrossEntropyLoss()
-
 def warmup(net , dataloader, args):
+    CEloss = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.initial_lr, momentum=0.9, weight_decay=5e-4)
     net.train()
     for inputs, labels in dataloader:
         inputs, labels = inputs.cuda(), labels.cuda()
         optimizer.zero_grad()
         outputs = net(inputs)
-        loss = CE(outputs, labels)
+        loss = CEloss(outputs, labels)
         L = loss  # + penalty
         L.backward()
         optimizer.step()
@@ -26,6 +25,7 @@ def sort_data(model, dataloader, device, args):
     warmup(model, dataloader, args)
     was_training = model.training
     model.eval()
+    CE = nn.CrossEntropyLoss(reduction='none')
     losses = torch.zeros(len(dataloader.dataset.data))
     p_i = torch.zeros(args.num_classes, len(dataloader.dataset.data))
     index_i = torch.zeros(args.num_classes)
