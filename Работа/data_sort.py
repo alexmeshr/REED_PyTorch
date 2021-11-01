@@ -5,16 +5,17 @@ from sklearn.mixture import GaussianMixture
 from scipy.special import softmax
 import matplotlib.pyplot as plt
 import torch.optim as optim
-from torch.optim import lr_scheduler
+
+CE = nn.CrossEntropyLoss()
 
 def warmup(net , dataloader, args):
     optimizer = optim.SGD(net.parameters(), lr=args.initial_lr, momentum=0.9, weight_decay=5e-4)
     net.train()
-    for inputs, labels in enumerate(dataloader):
+    for inputs, labels in dataloader:
         inputs, labels = inputs.cuda(), labels.cuda()
         optimizer.zero_grad()
         outputs = net(inputs)
-        loss = nn.CrossEntropyLoss(outputs, labels)
+        loss = CE(outputs, labels)
         L = loss  # + penalty
         L.backward()
         optimizer.step()
@@ -31,7 +32,6 @@ def sort_data(model, dataloader, device, args):
     p_max = torch.zeros(len(dataloader.dataset.data))
     answers = torch.zeros(len(dataloader.dataset.data))
     #p_array = np.array([])
-    CE = nn.CrossEntropyLoss(reduction='none')
     with torch.no_grad():
         index = 0
         for inputs, targets in dataloader:
