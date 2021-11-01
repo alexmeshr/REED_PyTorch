@@ -39,19 +39,19 @@ def sort_data(model, dataloader, device, args):
         index = 0
         for inputs, targets in dataloader:
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)#.cpu().numpy()
-            #outputs_p = np.array([softmax(output) for output in outputs])
+            outputs = model(inputs).cpu().numpy()
+            outputs_p = np.array([softmax(output) for output in outputs])
             #for output in outputs_p:
             #  p_array = np.append(p_array, output)
-            #outputs_p =torch.tensor(outputs_p).to(device)
-            #outputs = torch.tensor(outputs).to(device)
+            outputs_p =torch.tensor(outputs_p).to(device)
+            outputs = torch.tensor(outputs).to(device)
             loss = CE(outputs, targets)
-            #predictions, nums = torch.max(outputs_p, 1)
+            predictions, nums = torch.max(outputs_p, 1)
             for b in range(inputs.size(0)):
                 losses[index] = loss[b]
                 #p_i[int(nums[b])][int(index_i[int(nums[b])])] = predictions[b]
                 #index_i[int(nums[b])] += 1
-                #p_max[index] = predictions[b]
+                p_max[index] = predictions[b]
                 #answers[index] = nums[b]
                 index += 1
     #p_i = [i[i!=0] for i in p_i]
