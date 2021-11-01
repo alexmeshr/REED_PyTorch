@@ -15,8 +15,6 @@ import random
 from data import *
 import argparse
 from transformer import *
-import cifar
-import mnist 
 from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
 from models.resnet_simclr import ResNetSimCLR
 from simclr import SimCLR
@@ -55,7 +53,7 @@ parser.add_argument('--testing', type=bool, default=True)
 # parser.add_argument('--out_dim', default=128, type=int, help='feature dimension (default: 128)')
 
 args, unknown = parser.parse_known_args()
-tests = [0, 0.3, 0.5, 0.7, 0.8, 0.9]
+tests = [0.1, 0.3, 0.5, 0.7, 0.8, 0.9]
 def test_(args):
     accs = [0, 0, 0, 0, 0, 0]
     recalls = [0, 0, 0, 0, 0, 0]

@@ -33,13 +33,13 @@ def check_model(model, dataloader, device):
             for label, prediction in zip(labels, predictions):
                 answ = (label == prediction)
                 if answ:
-                    if dataloader.dataset.data.noise_or_not[i]:
+                    if dataloader.dataset.noise_or_not[i]:
                         TP += 1
                     else:
                         FP += 1
 
                 else:
-                    if dataloader.dataset.data.noise_or_not[i]:
+                    if dataloader.dataset.noise_or_not[i]:
                         FN += 1
                     else:
                         TN += 1

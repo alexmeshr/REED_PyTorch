@@ -35,11 +35,8 @@ def sort_data(model, dataloader, device, args):
                 index += 1
     p_i = [i[i!=0] for i in p_i]
     losses = (losses - losses.min()) / (losses.max() - losses.min())
-    #print(losses)
     input_loss = losses.reshape(-1, 1)
-    #print("p_i:", p_i)
     p_i = [i.reshape(-1,1) for i in p_i]
-    #print("p_i:", p_i)
     gmm1 = GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4)
     gmm1.fit(input_loss)
     prob1 = gmm1.predict_proba(input_loss)
@@ -74,7 +71,7 @@ def sort_data(model, dataloader, device, args):
     plt.show()
     new_targets =  np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
-        if p_right[i] or ((not p_clean[i]) and (answers[i] == dataloader.dataset.targets[i])):
+        if p_clean[i] or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
             new_targets[i] = answers[i]
         else:
             new_targets[i] = -1
@@ -98,9 +95,9 @@ def sort_data(model, dataloader, device, args):
         precision = TP/(TP + FP)
         recall = TP/(TP + FN)
         F1 = 2 * (recall * precision) / (recall + precision)
-        print("acc: ", TP + TN, (TP + TN) / i)
+        print("acc: ", TP + TN, (TP + TN) / len(dataloader.dataset.data))
         print("precision: ", precision)
         print("recall: ", recall)
         print("F1: ", F1)
         model.train(mode=was_training)
-    return (TP + TN) / i, precision, recall, F1
+    return (TP + TN) / len(dataloader.dataset.data), precision, recall, F1
