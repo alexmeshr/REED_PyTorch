@@ -25,7 +25,7 @@ def sort_data(model, dataloader, device, args):
     model = model.to(device)
     for i in range(args.warm_up):
         print("  ", i)
-        warmup(model, dataloader, args)
+        warmup(model, dataloader, device, args)
     was_training = model.training
     model.eval()
     CE = nn.CrossEntropyLoss(reduction='none')
