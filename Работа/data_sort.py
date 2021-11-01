@@ -105,10 +105,11 @@ def sort_data(model, dataloader, device, args):
                 else:
                     FP+=1
             else:
-                if answers[i] == correct[i]:
+                if dataloader.dataset.targets[i] == correct[i]:
                     FN+=1
                 else:
                     TN+=1
+                    print("err")
         precision = TP/(TP + FP)
         recall = TP/(TP + FN)
         F1 = 2 * (recall * precision) / (recall + precision)
