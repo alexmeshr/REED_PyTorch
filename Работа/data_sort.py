@@ -23,7 +23,6 @@ def warmup(net , dataloader,device, args):
 
 def sort_data(model, dataloader, device, args):
     model = model.to(device)
-    print("new")
     for i in range(args.warm_up):
         print("  ", i)
         warmup(model, dataloader, device, args)
@@ -89,12 +88,11 @@ def sort_data(model, dataloader, device, args):
     ax2.scatter(x = x, y=p_max[p_noise][:1000], c = 'y', label='not P_clean')
     plt.legend(loc='upper right')
     plt.show()
-    new_targets =  dataloader.dataset.targets
+    new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
-        #if p_clean[i] or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
-        #    new_targets[i] = answers[i]
-        #else:
-        if not p_clean[i]:
+        if p_clean[i]:  # or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
+            new_targets[i] = dataloader.dataset.targets[i]
+        else:
             new_targets[i] = -1
     if args.testing:
         correct = dataloader.dataset.original_targets
