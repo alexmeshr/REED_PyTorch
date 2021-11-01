@@ -94,6 +94,7 @@ def sort_data(model, dataloader, device, args):
             new_targets[i] = dataloader.dataset.targets[i]
         else:
             new_targets[i] = -1
+    print(new_targets)
     if args.testing:
         correct = dataloader.dataset.original_targets
         TP = 0
