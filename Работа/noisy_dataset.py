@@ -28,6 +28,7 @@ class Noisy_Dataset(Data.Dataset):
             self.noisy_labels = [i[0] for i in self.noisy_labels]
             _targets = [i[0] for i in self.targets]
             self.noise_or_not = np.transpose(self.noisy_labels) == np.transpose(_targets)
+            self.targets = self.noisy_labels
 
     def __getitem__(self, index):
         """
@@ -37,9 +38,9 @@ class Noisy_Dataset(Data.Dataset):
             tuple: (image, target) where target is index of the target class.
         """
         if self.noise_type != 'clean' and self.noise_rate > 0:
-            img, target = self.data[index], self.noisy_labels[index]
-        else:
             img, target = self.data[index], self.targets[index]
+        else:
+            img, target = self.data[index], self.original_targets[index]
         img = Image.fromarray(img.numpy(), mode='L')
 
         if self.transform is not None:

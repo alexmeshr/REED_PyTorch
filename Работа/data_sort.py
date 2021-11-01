@@ -64,21 +64,6 @@ def sort_data(model, dataloader, device, args):
     prob1 = prob1[:, gmm1.means_.argmin()]
     p_clean = (prob1 > args.p_clean)
     p_noise = (prob1 <= args.p_clean)
-    #print("p_clean: ", prob1)
-    #gmm2 = [GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4) for x in range(args.num_classes)]
-    #for i in range(args.num_classes):
-    #    gmm2[i].fit(p_i[i])
-    #prob2 = torch.zeros(len(dataloader.dataset.data))
-    #for j in range(len(dataloader.dataset.data)):
-    #    prob2[j] = gmm2[int(answers[j])].predict_proba([[p_max[j]]])[0][gmm2[int(answers[j])].means_.argmin()]
-    #prob2 = gmm2.predict_proba(p_max)
-    #prob2 = prob2[:, gmm2.means_.argmin()]
-    #p_right = (prob2 > args.p_right)
-    #p_wrong = (prob2 <= args.p_right)
-    #print("p_right: ", prob2)
-    #for x in range(10000):
-    #    if p_right[x]:
-    #        print(x, prob2[x], p_max[x])
     fig, (ax2, ax) = plt.subplots(2,1, figsize=(10, 8))
     x = [x for x in range(1000)]
     #ax.scatter(x = x, y=p_max[p_right][:1000], c = 'g', label='P_right')
