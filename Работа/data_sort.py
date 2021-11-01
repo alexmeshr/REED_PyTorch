@@ -4,8 +4,25 @@ import torch.nn as nn
 from sklearn.mixture import GaussianMixture
 from scipy.special import softmax
 import matplotlib.pyplot as plt
+import torch.optim as optim
+from torch.optim import lr_scheduler
+
+def warmup(net , dataloader, args):
+    optimizer = optim.SGD(net.parameters(), lr=args.initial_lr, momentum=0.9, weight_decay=5e-4)
+    net.train()
+    for inputs, labels in enumerate(dataloader):
+        inputs, labels = inputs.cuda(), labels.cuda()
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        loss = nn.CrossEntropyLoss(outputs, labels)
+        L = loss  # + penalty
+        L.backward()
+        optimizer.step()
+
+
 
 def sort_data(model, dataloader, device, args):
+    warmup(model, dataloader, args)
     was_training = model.training
     model.eval()
     losses = torch.zeros(len(dataloader.dataset.data))
@@ -24,6 +41,7 @@ def sort_data(model, dataloader, device, args):
             #for output in outputs:
               #p_array = np.append(p_array, output)
             outputs_p =torch.tensor(outputs_p).cuda()
+            outputs = torch.tensor(outputs).cuda()
             loss = CE(outputs, targets)
             predictions, nums = torch.max(outputs_p, 1)
             for b in range(inputs.size(0)):
