@@ -84,7 +84,7 @@ def sort_data(model, dataloader, device, args):
     plt.show()
     new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
-        if p_clean[i]:  # or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
+        if p_clean[i] or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
             new_targets[i] = answers[i]
         else:
             new_targets[i] = -1
