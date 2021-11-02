@@ -92,8 +92,8 @@ def sort_data(model, dataloader, device, args):
     #print("p_right: ", prob2)
     fig, ax2 = plt.subplots(1,1, figsize=(10, 8))
     x = [x for x in range(1000)]
-    ax2.scatter(x = x, y=p_max[p_right][:1000], c = 'b', label='p_right')
-    ax2.scatter(x = x, y=p_max[p_wrong][:1000], c = 'y', label='not p_right')
+    ax2.scatter(x = x, y=p_max[p_right][:1000], c = 'y', label='p_right')
+    ax2.scatter(x = x, y=p_max[p_wrong][:1000], c = 'b', label='not p_right')
     plt.legend(loc='lower right')
     plt.show()
     new_targets = np.zeros(len(dataloader.dataset.data))
