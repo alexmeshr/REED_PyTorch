@@ -28,10 +28,9 @@ class NegEntropy(object):
         probs = torch.softmax(outputs, dim=1)
         return torch.mean(torch.sum(probs.log()*probs, dim=1))
 
-
 def sort_data(model, dataloader, device, args):
     model = model.to(device)
-    print("new6")
+    print("new9")
     for i in range(args.warm_up):
         print("  ", i)
         warmup(model, dataloader, device, args)
@@ -92,20 +91,30 @@ def sort_data(model, dataloader, device, args):
     m = np.array([np.mean(x) for x in gmm2.means_])
     prob2 = prob2[:, m.argmin()]
     p_right = (prob2 > args.p_right)
-    p_wrong = (prob2 <= args.p_right)
-    print("p_right: ", prob2)
-    fig, ax2 = plt.subplots(1, 1, figsize=(10, 8))
-    x = [x for x in range(1000)]
-    ax2.scatter(x=x, y=p_max[p_right][:1000], c='b', label='p_right')
-    ax2.scatter(x=x, y=p_max[p_wrong][:1000], c='y', label='not p_right')
-    plt.legend(loc='lower right')
-    plt.show()
+    #p_wrong = (prob2 <= args.p_right)
+    #print("p_right: ", prob2)
+    #fig, ax2 = plt.subplots(1, 1, figsize=(10, 8))
+    #x = [x for x in range(1000)]
+    #ax2.scatter(x=x, y=p_max[p_right][:1000], c='y', label='p_right')
+    #ax2.scatter(x=x, y=p_max[p_wrong][:1000], c='b', label='not p_right')
+    #plt.legend(loc='lower right')
+    #plt.show()
+    good = 0
+    bad = 0
+    correct = dataloader.dataset.original_targets
     new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
         if p_clean[i] or ((p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
-            new_targets[i] = answers[i]
+          new_targets[i] = answers[i]
+          if ((not p_clean[i]) and (p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
+            if new_targets[i] == correct[i]:
+              good+=1
+            else:
+              bad+=1
         else:
             new_targets[i] = -1
+    print("good: ", good)
+    print("bad: ", bad)
     if args.testing:
         correct = dataloader.dataset.original_targets
         TP = 0
