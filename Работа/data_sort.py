@@ -15,11 +15,18 @@ def warmup(net , dataloader,device, args):
         optimizer.zero_grad()
         outputs = net(inputs)
         loss = CEloss(outputs, labels)
-        L = loss  # + penalty
+        if args.noise_type == 'symmetric':
+            L = loss
+        else if args.noise_type == 'symmetric':
+            penalty = NegEntropy(outputs)
+            L = loss + penalty
         L.backward()
         optimizer.step()
 
-
+class NegEntropy(object):
+    def __call__(self,outputs):
+        probs = torch.softmax(outputs, dim=1)
+        return torch.mean(torch.sum(probs.log()*probs, dim=1))
 
 def sort_data(model, dataloader, device, args):
     model = model.to(device)
