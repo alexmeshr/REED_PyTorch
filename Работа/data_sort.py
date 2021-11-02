@@ -87,7 +87,7 @@ def sort_data(model, dataloader, device, args):
     x = [x for x in range(1000)]
     ax2.scatter(x = x, y=p_max[p_clean][:1000], c = 'b', label='P_clean')
     ax2.scatter(x = x, y=p_max[p_noise][:1000], c = 'y', label='not P_clean')
-    plt.legend(loc='upper right')
+    plt.legend(loc='lower right')
     plt.show()
     new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
