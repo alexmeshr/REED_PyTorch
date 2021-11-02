@@ -15,11 +15,18 @@ def warmup(net , dataloader,device, args):
         optimizer.zero_grad()
         outputs = net(inputs)
         loss = CEloss(outputs, labels)
-        L = loss  # + penalty
+        if args.noise_type == 'symmetric':
+            L = loss
+        elif args.noise_type == 'symmetric':
+            penalty = NegEntropy(outputs)
+            L = loss + penalty
         L.backward()
         optimizer.step()
 
-
+class NegEntropy(object):
+    def __call__(self,outputs):
+        probs = torch.softmax(outputs, dim=1)
+        return torch.mean(torch.sum(probs.log()*probs, dim=1))
 
 def sort_data(model, dataloader, device, args):
     model = model.to(device)
@@ -67,8 +74,8 @@ def sort_data(model, dataloader, device, args):
     #print("p_clean: ", prob1)
     gmm2 = [GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4) for x in range(args.num_classes)]
     for i in range(args.num_classes):
-        print(p_i)
-        if len(p_i) > 0:
+        print(p_i[i].shape)
+        if len(p_i[i]) > 0:
             gmm2[i].fit(p_i[i])
     prob2 = torch.zeros(len(dataloader.dataset.data))
     for j in range(len(dataloader.dataset.data)):
