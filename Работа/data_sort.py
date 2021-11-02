@@ -74,8 +74,8 @@ def sort_data(model, dataloader, device, args):
     #print("p_clean: ", prob1)
     gmm2 = [GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4) for x in range(args.num_classes)]
     for i in range(args.num_classes):
-        print(p_i)
-        if len(p_i) > 0:
+        print(p_i[i].shape)
+        if len(p_i[i]) > 0:
             gmm2[i].fit(p_i[i])
     prob2 = torch.zeros(len(dataloader.dataset.data))
     for j in range(len(dataloader.dataset.data)):
