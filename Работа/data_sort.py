@@ -17,7 +17,7 @@ def warmup(net , dataloader,device, args):
         loss = CEloss(outputs, labels)
         if args.noise_type == 'symmetric':
             L = loss
-        else if args.noise_type == 'symmetric':
+        elif args.noise_type == 'symmetric':
             penalty = NegEntropy(outputs)
             L = loss + penalty
         L.backward()
