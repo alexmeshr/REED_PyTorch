@@ -6,12 +6,12 @@ from scipy.special import softmax
 import matplotlib.pyplot as plt
 import torch.optim as optim
 
-def warmup(net , dataloader, args):
+def warmup(net , dataloader,device, args):
     CEloss = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
     net.train()
     for inputs, labels in dataloader:
-        inputs, labels = inputs.cuda(), labels.cuda()
+        inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = net(inputs)
         loss = CEloss(outputs, labels)
@@ -25,7 +25,7 @@ def sort_data(model, dataloader, device, args):
     model = model.to(device)
     for i in range(args.warm_up):
         print("  ", i)
-        warmup(model, dataloader, args)
+        warmup(model, dataloader, device, args)
     was_training = model.training
     model.eval()
     CE = nn.CrossEntropyLoss(reduction='none')
@@ -34,17 +34,17 @@ def sort_data(model, dataloader, device, args):
     index_i = torch.zeros(args.num_classes)
     p_max = torch.zeros(len(dataloader.dataset.data))
     answers = torch.zeros(len(dataloader.dataset.data))
-    p_array = np.array([])
+    #p_array = np.array([])
     with torch.no_grad():
         index = 0
         for inputs, targets in dataloader:
-            inputs, targets = inputs.cuda(), targets.cuda()
+            inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs).cpu().numpy()
             outputs_p = np.array([softmax(output) for output in outputs])
-            for output in outputs_p:
-              p_array = np.append(p_array, output)
-            outputs_p =torch.tensor(outputs_p).cuda()
-            outputs = torch.tensor(outputs).cuda()
+            #for output in outputs_p:
+            #  p_array = np.append(p_array, output)
+            outputs_p =torch.tensor(outputs_p).to(device)
+            outputs = torch.tensor(outputs).to(device)
             loss = CE(outputs, targets)
             predictions, nums = torch.max(outputs_p, 1)
             for b in range(inputs.size(0)):
@@ -67,34 +67,28 @@ def sort_data(model, dataloader, device, args):
     #print("p_clean: ", prob1)
     gmm2 = [GaussianMixture(n_components=2, max_iter=10, tol=1e-2, reg_covar=5e-4) for x in range(args.num_classes)]
     for i in range(args.num_classes):
-        print(p_i[i])
-        gmm2[i].fit(p_i[i])
+        print(p_i)
+        if len(p_i) > 0:
+            gmm2[i].fit(p_i[i])
     prob2 = torch.zeros(len(dataloader.dataset.data))
     for j in range(len(dataloader.dataset.data)):
         prob2[j] = gmm2[int(answers[j])].predict_proba([[p_max[j]]])[0][gmm2[int(answers[j])].means_.argmin()]
-    #prob2 = gmm2.predict_proba(p_max)
-    #prob2 = prob2[:, gmm2.means_.argmin()]
     p_right = (prob2 > args.p_right)
-    p_wrong = (prob2 <= args.p_right)
+    #p_wrong = (prob2 <= args.p_right)
     #print("p_right: ", prob2)
-    #for x in range(10000):
-    #    if p_right[x]:
-    #        print(x, prob2[x], p_max[x])
-    fig, (ax2, ax) = plt.subplots(2,1, figsize=(10, 8))
+    fig, ax2 = plt.subplots(1,1, figsize=(10, 8))
     x = [x for x in range(1000)]
-    ax.scatter(x = x, y=p_max[p_right][:1000], c = 'g', label='P_right')
-    ax.scatter(x = x, y=p_max[p_wrong][:1000], c = 'r', label='not P_right')
-    plt.legend(loc='upper right')
     ax2.scatter(x = x, y=p_max[p_clean][:1000], c = 'b', label='P_clean')
     ax2.scatter(x = x, y=p_max[p_noise][:1000], c = 'y', label='not P_clean')
     plt.legend(loc='upper right')
     plt.show()
-    new_targets =  np.zeros(len(dataloader.dataset.data))
+    new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
         if p_clean[i] or ((not p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
             new_targets[i] = answers[i]
         else:
             new_targets[i] = -1
+    print(new_targets)
     if args.testing:
         correct = dataloader.dataset.original_targets
         TP = 0
@@ -108,7 +102,7 @@ def sort_data(model, dataloader, device, args):
                 else:
                     FP+=1
             else:
-                if answers[i] == correct[i]:
+                if dataloader.dataset.targets[i] == correct[i]:
                     FN+=1
                 else:
                     TN+=1
