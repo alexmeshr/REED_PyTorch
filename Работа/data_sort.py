@@ -10,7 +10,7 @@ def warmup(net , dataloader,device, args):
     CEloss = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
     net.train()
-    for inputs, labels in dataloader:
+    for inputs, labels, _ in dataloader:
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = net(inputs)
@@ -44,10 +44,9 @@ def sort_data(model, dataloader, device, args):
     answers = torch.zeros(len(dataloader.dataset.data))
     p_array = np.zeros((len(dataloader.dataset.data), args.num_classes))
     with torch.no_grad():
-        index = 0
         p_index = 0
-        for inputs, targets in dataloader:
-            inputs, targets = inputs.to(device), targets.to(device)
+        for inputs, targets, index in dataloader:
+            inputs, targets, index = inputs.to(device), targets.to(device), index.to(device)
             outputs = model(inputs).cpu().numpy()
             outputs_p = np.array([softmax(output) for output in outputs])
             for output in outputs_p:
@@ -58,12 +57,11 @@ def sort_data(model, dataloader, device, args):
             loss = CE(outputs, targets)
             predictions, nums = torch.max(outputs_p, 1)
             for b in range(inputs.size(0)):
-                losses[index] = loss[b]
+                losses[index[b]] = loss[b]
                 # p_i[int(nums[b])][int(index_i[int(nums[b])])] = predictions[b]
                 # index_i[int(nums[b])] += 1
-                p_max[index] = predictions[b]
-                answers[index] = nums[b]
-                index += 1
+                p_max[index[b]] = predictions[b]
+                answers[index[b]] = nums[b]
     # p_i = [i[i!=0] for i in p_i]
     print(p_array)
     losses = (losses - losses.min()) / (losses.max() - losses.min())

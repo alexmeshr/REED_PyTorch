@@ -22,7 +22,7 @@ def check_model(model, dataloader, device):
     TN = 0
     FN = 0
     with torch.no_grad():
-        for inputs, labels in dataloader:
+        for inputs, labels, _ in dataloader:
             inputs = inputs.to(device)
             labels = labels.to(device)
             outputs = model(inputs)
@@ -103,7 +103,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
             running_loss = 0.0
             running_corrects = 0
             # Iterate over data.
-            for inputs, labels in dataloader:
+            for inputs, labels, _ in dataloader:
                 labels = labels.type(torch.LongTensor)
                 inputs = inputs.to(device)
                 labels = labels.to(device)
