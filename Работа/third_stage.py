@@ -1,4 +1,4 @@
-from torch import linalg as LA
+from torch import linalg as LA, optim
 import torch
 import torch.nn as nn
 from torch.utils.data import WeightedRandomSampler, DataLoader
@@ -34,26 +34,25 @@ class GraphStructuredR():
             self.lamdLU = args.lamdLU
             self.lamdUU = args.lamdUU
             self.T = args.Temperature
-        def __call__(self, outputs, index, targets):#vector = cat(labeled, unlabeled)
+        def __call__(self, outputs, targets, index):#vector = cat(labeled, unlabeled)
             batch_size = len(outputs)//2
             """outputs_l = outputs[:batch_size]
             outputs_u = outputs[batch_size:]
             index_l = index[:batch_size]
-            index_u = index[batch_size:]"""
-            px = torch.softmax(outputs, dim=1)
-            ptx = px ** (1 / self.T)
-            p = ptx / ptx.sum(dim=1, keepdim=True)
+            index_u = index[batch_size:]
+            """ #it is already sharprned in mixmatch
             sum1 = 0
             sum2 = 0
             for i in range(batch_size):
                 for j in range(batch_size, 2*batch_size):
-                    sum1+=self.graph[index[i]][index[j]]*(LA.vector_norm(p[j] - targets[i], ord=2)**2)
-                    sum2+=self.graph[index[i+batch_size]][index[j]]*(LA.vector_norm(p[j] - p[i+batch_size], ord=2)**2)
+                    sum1+=self.graph[index[i]][index[j]]*(LA.vector_norm(outputs[j] - targets[i], ord=2)**2)
+                    sum2+=self.graph[index[i+batch_size]][index[j]]*(LA.vector_norm(outputs[j] - outputs[i+batch_size], ord=2)**2)
             return self.lamdLU*sum1+self.lamdUU*sum2
 
 def MixMatch(net, data, p_matr, args):
     R = GraphStructuredR(graph=generate_graph(p_matr,args.graph_treshold), args=args)
     criterion = SemiLoss()
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     labeled_trainloader = DataLoader(dataset=data,
                                   sampler=class_balanced_sampler(data.targets, args.num_classes),
                                   batch_size=args.batch_size,
@@ -77,6 +76,9 @@ def MixMatch(net, data, p_matr, args):
             inputs_u, _, index_u = unlabeled_train_iter.next()
         batch_size = inputs_x.size(0)
 
+        # Transform label to one-hot
+        labels_x = torch.zeros(batch_size, args.num_class).scatter_(1, labels_x.view(-1, 1), 1)
+
         inputs_x, labels_x, index_x = inputs_x.cuda(), labels_x.cuda(), index_x.cuda()
         inputs_u, index_u = inputs_u.cuda(), index_u.cuda()
 
@@ -97,9 +99,9 @@ def MixMatch(net, data, p_matr, args):
         l = np.random.beta(args.alpha, args.alpha)
         l = max(l, 1 - l)
         all_inputs = torch.cat([inputs_x, inputs_u], dim=0)
-        all_targets = torch.cat([outputs_x, outputs_u], dim=0)
+        all_targets = torch.cat([labels_x, targets_u], dim=0)
         all_index = torch.cat([index_x, index_u], dim=0)
-
+        R_outputs = torch.cat([targets_x, targets_u], dim=0)
         idx = torch.randperm(all_inputs.size(0))
 
         input_a, input_b = all_inputs, all_inputs[idx]
@@ -109,18 +111,13 @@ def MixMatch(net, data, p_matr, args):
         mixed_target = l * target_a + (1 - l) * target_b
 
         logits = net(mixed_input)
-        logits_x = logits[:batch_size * 2]
-        logits_u = logits[batch_size * 2:]
+        logits_x = logits[:batch_size]
+        logits_u = logits[batch_size:]
 
-        Lx, Lu = criterion(logits_x, mixed_target[:batch_size * 2], logits_u, mixed_target[batch_size * 2:])
+        Lx, Lu = criterion(logits_x, mixed_target[:batch_size], logits_u, mixed_target[batch_size:])
 
-        # regularization
-        prior = torch.ones(args.num_class) / args.num_class
-        prior = prior.cuda()
-        pred_mean = torch.softmax(logits, dim=1).mean(0)
-        penalty = torch.sum(prior * torch.log(prior / pred_mean))
 
-        loss = Lx + args.MMlamb * Lu + penalty
+        loss = Lx + args.MMlamb * Lu + R(R_outputs, labels_x, all_index)
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
