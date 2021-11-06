@@ -21,8 +21,10 @@ from simclr import SimCLR
 from training import *
 from noisy_dataset import Noisy_Dataset
 from  data_sort import *
+from third_stage import MixMatch
 parser = argparse.ArgumentParser()
 parser.add_argument('--initial_lr', type=float, help='initial learning rate', default=0.001)
+parser.add_argument('--lr', type=float, help='learning rate', default=0.02)
 parser.add_argument('--momentum', type=float, help='weight_decay for training', default=0.9)
 parser.add_argument('--dataset', type=str, help='fashionmnist, cifar10, or cifar100', default='fashionmnist')
 parser.add_argument('--network', type=str, default='fixed fe')
@@ -49,6 +51,12 @@ parser.add_argument('--p_clean', type=float, default=0.5)
 parser.add_argument('--p_right', type=float, default=0.5)
 parser.add_argument('--testing', type=bool, default=True)
 parser.add_argument('--warm_up', type=int, default=1)
+parser.add_argument('--Temperature', type=float, default=0.5)
+parser.add_argument('--alpha', type=float, default=0.5)
+parser.add_argument('--MMlamb', type=float, default=0.5)
+parser.add_argument('--lamdLU', type=float, default=0.5)
+parser.add_argument('--lamdUU', type=float, default=0.5)
+parser.add_argument('--graph_treshold', type=float, default=0.5)
 
 
 # parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
@@ -57,15 +65,6 @@ parser.add_argument('--warm_up', type=int, default=1)
 
 args, unknown = parser.parse_known_args()
 tests = [0.1, 0.3, 0.5, 0.7, 0.8, 0.9]
-x = []
-acc1=[]
-pr1=[]
-re1=[]
-f1=[]
-acc2=[]
-pr2=[]
-re2=[]
-f2=[]
 
 def test_(args):
     for test in range(6):
@@ -115,25 +114,9 @@ def test_(args):
         except:
             classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
             torch.save(classifier.state_dict(), './testnet')
-        global acc1
-        global acc2
-        global re1
-        global re2
-        global pr1
-        global pr2
-        global f1
-        global f2
-        global x
-        x.append(tests[test])
-        acc, precision, recall, F1 = check_model(classifier, train_loader, device)
-        acc1.append(acc)
-        pr1.append(precision)
-        re1.append(recall)
-        f1.append(F1)
-        acc_new, precision_new, recall_new, F1_new = sort_data(classifier, train_loader, device, args)
-        acc2.append(acc_new)
-        pr2.append(precision_new)
-        re2.append(recall_new)
-        f2.append(F1_new)
+
+        #check_model(classifier, train_loader, device)
+        classifier, new_data, p_matr = sort_data(classifier, train_loader, device, args)
+        classifier = MixMatch(classifier,)
 if __name__ == "__main__":
   test_(args)

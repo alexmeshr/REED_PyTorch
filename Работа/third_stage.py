@@ -40,7 +40,7 @@ class GraphStructuredR():
             outputs_u = outputs[batch_size:]
             index_l = index[:batch_size]
             index_u = index[batch_size:]
-            """ #it is already sharprned in mixmatch
+            """ #it is already sharpened in mixmatch
             sum1 = 0
             sum2 = 0
             for i in range(batch_size):
@@ -91,7 +91,7 @@ def MixMatch(net, data, p_matr, args):
 
             outputs_x = net(inputs_x)
             px = torch.softmax(outputs_x, dim=1)
-            ptx = px ** (1 / args.T)  # temparature sharpening
+            ptx = px ** (1 / args.Temperature)  # temparature sharpening
             targets_x = ptx / ptx.sum(dim=1, keepdim=True)  # normalize
             targets_x = targets_x.detach()
 
@@ -122,7 +122,7 @@ def MixMatch(net, data, p_matr, args):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
+    return net
 
 
 class SemiLoss(object):

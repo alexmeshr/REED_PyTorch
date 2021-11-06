@@ -135,4 +135,4 @@ def sort_data(model, dataloader, device, args):
         print("recall: ", recall)
         print("F1: ", F1)
         model.train(mode=was_training)
-    return (TP + TN) / len(dataloader.dataset.data), precision, recall, F1
+    return model,new_targets, p_array
