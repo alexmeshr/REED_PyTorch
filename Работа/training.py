@@ -97,15 +97,10 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
         phases = ['train']
 
         # Each epoch has a training and validation phase
-        for phase in phases:
-            if phase == 'train':
-                model.train()  # Set model to training mode
-            else:
-                model.eval()  # Set model to evaluate mode
-            running_loss = 0.0
-            running_corrects = 0
-            # Iterate over data.
-            for inputs, labels, _ in dataloader:
+        model.train()  # Set model to training mode
+        running_loss = 0.0
+        running_corrects = 0
+        for inputs, labels, _ in dataloader:
                 labels = labels.type(torch.LongTensor)
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -114,31 +109,22 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
                 if optimizer:
                     optimizer.zero_grad()
 
-                with torch.set_grad_enabled(phase == 'train'):
+                with torch.set_grad_enabled(True):
                     outputs = model(inputs)
                     _, preds_noise = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
 
-                    # backward + optimize only if in training phase
-                    if phase == 'train':
-                        loss.backward()
-                        optimizer.step()
+                    loss.backward()
+                    optimizer.step()
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds_noise == labels.data)
-            if phase == 'train':
                 scheduler.step()
 
-            epoch_loss = running_loss / dataset_size
-            epoch_acc = running_corrects.double() / dataset_size
-
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
-
-            # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
+        epoch_loss = running_loss / dataset_size
+        epoch_acc = running_corrects.double() / dataset_size
+        print('{} Loss: {:.4f} Acc: {:.4f}'.format(epoch_loss, epoch_acc))
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
@@ -146,3 +132,20 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
     print('Best val Acc: {:4f}'.format(best_acc))
 
     return model
+
+def validate_model(net, testloader):
+        correct = 0
+        total = 0
+        # since we're not training, we don't need to calculate the gradients for our outputs
+        with torch.no_grad():
+            for data in testloader:
+                images, labels = data
+                # calculate outputs by running images through the network
+                outputs = net(images)
+                # the class with the highest energy is what we choose as prediction
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        print('Accuracy of the network on the %d test images: %d %%' % (len(testloader.dataset.data),
+                100 * correct / total))

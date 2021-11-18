@@ -92,17 +92,27 @@ def test_(args):
 
         if args.dataset == 'cifar10':
             args.num_classes = 10
-            test_data = torchvision.datasets.CIFAR10(root='data/', train=True, download=True,
+            test_data = torchvision.datasets.CIFAR10(root='data/', train=False, download=True,
+                                                     transform=transform_train(args.dataset))
+            train_data_clear = torchvision.datasets.CIFAR10(root='data/', train=True, download=True,
                                                      transform=transform_train(args.dataset))
 
         if args.dataset == 'fashionmnist':
             args.num_classes = 10
-            test_data = torchvision.datasets.FashionMNIST(root='data/', train=True, download=True,
+            test_data = torchvision.datasets.FashionMNIST(root='data/', train=False, download=True,
                                                           transform=transform_train(args.dataset))
-        train_data = Noisy_Dataset(test_data, transform=transform_train(args.dataset),
+            train_data_clear = torchvision.datasets.FashionMNIST(root='data/', train=True, download=True,
+                                                          transform=transform_train(args.dataset))
+
+        train_data = Noisy_Dataset(train_data_clear, transform=transform_train(args.dataset),
                                    noise_type=args.noise_type, noise_rate=args.noise_rate, random_state=0,
                                    num_classes=args.num_classes)
         train_loader = DataLoader(dataset=train_data,
+                                  batch_size=args.batch_size,
+                                  shuffle=False,
+                                  num_workers=args.workers,
+                                  drop_last=False)
+        test_loader = DataLoader(dataset=test_data,
                                   batch_size=args.batch_size,
                                   shuffle=False,
                                   num_workers=args.workers,
@@ -117,6 +127,7 @@ def test_(args):
 
         #check_model(classifier, train_loader, device)
         classifier, new_data, p_matr = sort_data(classifier, train_loader, device, args)
-        classifier = MixMatch(classifier,)
+        classifier = MixMatch(classifier, new_data, p_matr, args)
+        validate_model(classifier, test_loader)
 if __name__ == "__main__":
   test_(args)
