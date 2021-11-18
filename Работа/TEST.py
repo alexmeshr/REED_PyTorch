@@ -33,7 +33,8 @@ parser.add_argument('--noise_type', help='symmetric or asymmetric', type=str, de
 parser.add_argument('--step_size', type=int, default=7)
 parser.add_argument('--gamma', type=float, default=0.1)
 parser.add_argument('--simcrl_epochs', type=int, default=20)
-parser.add_argument('--epochs', type=int, default=1)  # 25!!!
+parser.add_argument('--classifier_epochs', type=int, default=5)  # 25!!!
+parser.add_argument('--third_stage_epochs', type=int, default=25)
 parser.add_argument('--num_classes', type=int, default=10)
 parser.add_argument('--noise_rate', type=float, default=0.4)
 parser.add_argument('--seed', type=int, default=1)

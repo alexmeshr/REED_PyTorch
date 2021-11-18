@@ -78,7 +78,7 @@ def train_fixed_feature_extractor(model, dataloader, device, params):
 
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=params.step_size, gamma=params.gamma)
-    model_ft = train_model(model, criterion, optimizer, exp_lr_scheduler, dataloader, params.epochs, device,
+    model_ft = train_model(model, criterion, optimizer, exp_lr_scheduler, dataloader, params.classifier_epochs, device,
                            params.batch_size)
     for param in model_ft.parameters():
         param.requires_grad = True
@@ -93,8 +93,6 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
-
-        phases = ['train']
 
         # Each epoch has a training and validation phase
         model.train()  # Set model to training mode

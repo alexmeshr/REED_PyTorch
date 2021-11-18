@@ -68,60 +68,61 @@ def MixMatch(net, data, p_matr, args):
 
     net.train()
     unlabeled_train_iter = iter(unlabeled_trainloader)
-    for inputs_x, labels_x, index_x in labeled_trainloader:
-        try:
-            inputs_u, _, index_u = unlabeled_train_iter.next()
-        except:
-            unlabeled_train_iter = iter(unlabeled_trainloader)
-            inputs_u, _, index_u = unlabeled_train_iter.next()
-        batch_size = inputs_x.size(0)
+    for epoch in range(args.third_stage_epochs):
+        for inputs_x, labels_x, index_x in labeled_trainloader:
+            try:
+                inputs_u, _, index_u = unlabeled_train_iter.next()
+            except:
+                unlabeled_train_iter = iter(unlabeled_trainloader)
+                inputs_u, _, index_u = unlabeled_train_iter.next()
+            batch_size = inputs_x.size(0)
 
-        # Transform label to one-hot
-        labels_x = torch.zeros(batch_size, args.num_class).scatter_(1, labels_x.view(-1, 1), 1)
+            # Transform label to one-hot
+            labels_x = torch.zeros(batch_size, args.num_class).scatter_(1, labels_x.view(-1, 1), 1)
 
-        inputs_x, labels_x, index_x = inputs_x.cuda(), labels_x.cuda(), index_x.cuda()
-        inputs_u, index_u = inputs_u.cuda(), index_u.cuda()
+            inputs_x, labels_x, index_x = inputs_x.cuda(), labels_x.cuda(), index_x.cuda()
+            inputs_u, index_u = inputs_u.cuda(), index_u.cuda()
 
-        with torch.no_grad():
-            outputs_u = net(inputs_u)
-            pu = torch.softmax(outputs_u, dim=1)
-            ptu = pu ** (1 / args.Temperature)  # temparature sharpening
-            targets_u = ptu / ptu.sum(dim=1, keepdim=True)  # normalize
-            targets_u = targets_u.detach()
+            with torch.no_grad():
+                outputs_u = net(inputs_u)
+                pu = torch.softmax(outputs_u, dim=1)
+                ptu = pu ** (1 / args.Temperature)  # temparature sharpening
+                targets_u = ptu / ptu.sum(dim=1, keepdim=True)  # normalize
+                targets_u = targets_u.detach()
 
-            outputs_x = net(inputs_x)
-            px = torch.softmax(outputs_x, dim=1)
-            ptx = px ** (1 / args.Temperature)  # temparature sharpening
-            targets_x = ptx / ptx.sum(dim=1, keepdim=True)  # normalize
-            targets_x = targets_x.detach()
+                outputs_x = net(inputs_x)
+                px = torch.softmax(outputs_x, dim=1)
+                ptx = px ** (1 / args.Temperature)  # temparature sharpening
+                targets_x = ptx / ptx.sum(dim=1, keepdim=True)  # normalize
+                targets_x = targets_x.detach()
 
-        # mixmatch
-        l = np.random.beta(args.alpha, args.alpha)
-        l = max(l, 1 - l)
-        all_inputs = torch.cat([inputs_x, inputs_u], dim=0)
-        all_targets = torch.cat([labels_x, targets_u], dim=0)
-        all_index = torch.cat([index_x, index_u], dim=0)
-        R_outputs = torch.cat([targets_x, targets_u], dim=0)
-        idx = torch.randperm(all_inputs.size(0))
+            # mixmatch
+            l = np.random.beta(args.alpha, args.alpha)
+            l = max(l, 1 - l)
+            all_inputs = torch.cat([inputs_x, inputs_u], dim=0)
+            all_targets = torch.cat([labels_x, targets_u], dim=0)
+            all_index = torch.cat([index_x, index_u], dim=0)
+            R_outputs = torch.cat([targets_x, targets_u], dim=0)
+            idx = torch.randperm(all_inputs.size(0))
 
-        input_a, input_b = all_inputs, all_inputs[idx]
-        target_a, target_b = all_targets, all_targets[idx]
+            input_a, input_b = all_inputs, all_inputs[idx]
+            target_a, target_b = all_targets, all_targets[idx]
 
-        mixed_input = l * input_a + (1 - l) * input_b
-        mixed_target = l * target_a + (1 - l) * target_b
+            mixed_input = l * input_a + (1 - l) * input_b
+            mixed_target = l * target_a + (1 - l) * target_b
 
-        logits = net(mixed_input)
-        logits_x = logits[:batch_size]
-        logits_u = logits[batch_size:]
+            logits = net(mixed_input)
+            logits_x = logits[:batch_size]
+            logits_u = logits[batch_size:]
 
-        Lx, Lu = criterion(logits_x, mixed_target[:batch_size], logits_u, mixed_target[batch_size:])
+            Lx, Lu = criterion(logits_x, mixed_target[:batch_size], logits_u, mixed_target[batch_size:])
 
 
-        loss = Lx + args.MMlamb * Lu + R(R_outputs, labels_x, all_index)
-        # compute gradient and do SGD step
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            loss = Lx + args.MMlamb * Lu + R(R_outputs, labels_x, all_index)
+            # compute gradient and do SGD step
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
     return net
 
 
