@@ -51,7 +51,9 @@ class GraphStructuredR():
             return self.lamdLU*sum1+self.lamdUU*sum2
 
 def MixMatch(net, data, p_matr, args):
+    print("MM")
     R = GraphStructuredR(graph=generate_graph(p_matr,args.graph_treshold), args=args)
+    print("Graph done")
     criterion = SemiLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     labeled_trainloader = DataLoader(dataset=data,
@@ -69,6 +71,7 @@ def MixMatch(net, data, p_matr, args):
 
     net.train()
     unlabeled_train_iter = iter(unlabeled_trainloader)
+    print("start")
     for epoch in range(args.third_stage_epochs):
         for inputs_x, labels_x, index_x in labeled_trainloader:
             try:
@@ -124,10 +127,8 @@ def MixMatch(net, data, p_matr, args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            sys.stdout.write('\r')
-            sys.stdout.write(' Epoch [%3d/%3d]\t CE-loss: %.4f'
-                             % (epoch, args.third_stage_epochs, loss.item()))
-            sys.stdout.flush()
+            print('\r')
+            print(' Epoch [%3d/%3d]\t CE-loss: %.4f' % (epoch, args.third_stage_epochs, loss.item()))
     return net
 
 
