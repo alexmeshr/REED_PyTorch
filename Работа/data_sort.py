@@ -42,11 +42,11 @@ def sort_data(model, dataloader, device, args):
     # index_i = torch.zeros(args.num_classes)
     p_max = torch.zeros(len(dataloader.dataset.data))
     answers = torch.zeros(len(dataloader.dataset.data))
-    p_array = np.zeros((len(dataloader.dataset.data), args.num_classes))
+    p_array = torch.zeros((len(dataloader.dataset.data), args.num_classes))
     with torch.no_grad():
         p_index = 0
         for inputs, targets, index in dataloader:
-            inputs, targets, index = inputs.to(device), targets.to(device), index.to(device)
+            inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             outputs_p = torch.softmax(outputs, dim=1)
             outputs = torch.tensor(outputs).to(device)

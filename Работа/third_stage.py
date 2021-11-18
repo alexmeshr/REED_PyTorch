@@ -1,5 +1,6 @@
 from torch import linalg as LA, optim
 import torch
+import sys
 import torch.nn as nn
 from torch.utils.data import WeightedRandomSampler, DataLoader
 import torchvision
@@ -8,8 +9,8 @@ from transformer import *
 import torch.nn.functional as F
 
 def generate_graph(matr_in, treshold):
-    sim = nn.CosineSimilarity(dim=len(matr_in[0]), eps=1e-6)
-    matr_out = [[nn.ReLU(sim(matr_in[i], matr_in[j]) - treshold)
+    #sim = nn.CosineSimilarity(dim=len(matr_in[0]), eps=1e-6)
+    matr_out = [[nn.ReLU(F.cosine_similarity(matr_in[i], matr_in[j], dim=0) - treshold)
                  for j in range(len(matr_in))]for i in range(len(matr_in))]
     return matr_out
 
@@ -123,6 +124,10 @@ def MixMatch(net, data, p_matr, args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            sys.stdout.write('\r')
+            sys.stdout.write(' Epoch [%3d/%3d]\t CE-loss: %.4f'
+                             % (epoch, args.third_stage_epochs, loss.item()))
+            sys.stdout.flush()
     return net
 
 
