@@ -7,7 +7,7 @@ import torchvision
 from torchvision import datasets, models, transforms
 from transformer import *
 import torch.nn.functional as F
-
+from training import validate_model
 def generate_graph(matr_in, treshold):
     matr_out = [[nn.ReLU(F.cosine_similarity(matr_in[i], matr_in[j], dim=0) - treshold)
                  for j in range(len(matr_in))]for i in range(len(matr_in))]
@@ -54,7 +54,7 @@ class GraphStructuredR():
                     sum2+=a2*(LA.vector_norm(outputs[j] - outputs[i+batch_size], ord=2)**2)
             return self.lamdLU*sum1+self.lamdUU*sum2
 
-def MixMatch(net, data, p_matr, args):
+def MixMatch(net, data, p_matr, args, test_loader):
     print("MM")
     R = GraphStructuredR(matr_for_graph=p_matr, args=args)
     print("Graph done")
@@ -77,6 +77,8 @@ def MixMatch(net, data, p_matr, args):
     unlabeled_train_iter = iter(unlabeled_trainloader)
     print("start")
     for epoch in range(args.third_stage_epochs):
+        running_loss = 0.0
+        cnt = 0
         for inputs_x, labels_x, index_x in labeled_trainloader:
             try:
                 inputs_u, _, index_u = unlabeled_train_iter.next()
@@ -131,8 +133,10 @@ def MixMatch(net, data, p_matr, args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print('\r')
-            print(' Epoch [%3d/%3d]\t CE-loss: %.4f' % (epoch, args.third_stage_epochs, loss.item()))
+            running_loss += loss.item()
+            cnt+=1
+        print(' Epoch [%3d/%3d]\t CE-loss: %.4f' % (epoch, args.third_stage_epochs, running_loss/cnt))
+        validate_model(net, test_loader)
     return net
 
 

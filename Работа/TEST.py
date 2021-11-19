@@ -129,7 +129,7 @@ def test_(args):
         #check_model(classifier, train_loader, device)
         classifier, new_data, p_matr = sort_data(classifier, train_loader, device, args)
         train_data.change_targets(new_targets=new_data)
-        classifier = MixMatch(classifier, train_data, p_matr, args)
+        classifier = MixMatch(classifier, train_data, p_matr, args, test_loader)
         validate_model(classifier, test_loader)
 if __name__ == "__main__":
   test_(args)
