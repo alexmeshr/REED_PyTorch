@@ -9,7 +9,6 @@ from transformer import *
 import torch.nn.functional as F
 
 def generate_graph(matr_in, treshold):
-    #sim = nn.CosineSimilarity(dim=len(matr_in[0]), eps=1e-6)
     matr_out = [[nn.ReLU(F.cosine_similarity(matr_in[i], matr_in[j], dim=0) - treshold)
                  for j in range(len(matr_in))]for i in range(len(matr_in))]
     return matr_out
@@ -30,11 +29,12 @@ def class_balanced_sampler(targets, nclasses):
     return sampler
 
 class GraphStructuredR():
-        def __init__(self, graph, args):
-            self.graph = graph
+        def __init__(self, matr_for_graph, args):
+            self.matr_for_graph = matr_for_graph
             self.lamdLU = args.lamdLU
             self.lamdUU = args.lamdUU
             self.T = args.Temperature
+            self.graph_treshold = args.graph_treshold
         def __call__(self, outputs, targets, index):#vector = cat(labeled, unlabeled)
             batch_size = len(outputs)//2
             """outputs_l = outputs[:batch_size]
@@ -46,13 +46,15 @@ class GraphStructuredR():
             sum2 = 0
             for i in range(batch_size):
                 for j in range(batch_size, 2*batch_size):
-                    sum1+=self.graph[index[i]][index[j]]*(LA.vector_norm(outputs[j] - targets[i], ord=2)**2)
-                    sum2+=self.graph[index[i+batch_size]][index[j]]*(LA.vector_norm(outputs[j] - outputs[i+batch_size], ord=2)**2)
+                    a1 = nn.ReLU(F.cosine_similarity(self.matr_for_graph[index[i]], self.matr_for_graph[index[j]], dim=0) - self.graph_treshold)
+                    sum1+=a1*(LA.vector_norm(outputs[j] - targets[i], ord=2)**2)
+                    a2 = nn.ReLU(F.cosine_similarity(self.matr_for_graph[index[i+batch_size]], self.matr_for_graph[index[j]], dim=0) - self.graph_treshold)
+                    sum2+=a2*(LA.vector_norm(outputs[j] - outputs[i+batch_size], ord=2)**2)
             return self.lamdLU*sum1+self.lamdUU*sum2
 
 def MixMatch(net, data, p_matr, args):
     print("MM")
-    R = GraphStructuredR(graph=generate_graph(p_matr,args.graph_treshold), args=args)
+    R = GraphStructuredR(matr_for_graph=p_matr, args=args)
     print("Graph done")
     criterion = SemiLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
