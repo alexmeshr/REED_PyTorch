@@ -138,6 +138,7 @@ def validate_model(net, testloader):
         with torch.no_grad():
             for data in testloader:
                 images, labels = data
+                images, labels = images.cuda(), labels.cuda()
                 # calculate outputs by running images through the network
                 outputs = net(images)
                 # the class with the highest energy is what we choose as prediction
