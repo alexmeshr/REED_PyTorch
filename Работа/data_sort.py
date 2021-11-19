@@ -96,7 +96,7 @@ def sort_data(model, dataloader, device, args):
     #plt.show()
     good = 0
     bad = 0
-    new_targets = np.zeros(len(dataloader.dataset.data))
+    new_targets = np.empty([len(dataloader.dataset.data)],dtype=np.int64)
     for i in range(len(dataloader.dataset.data)):
         if p_clean[i] or ((p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
           new_targets[i] = answers[i]

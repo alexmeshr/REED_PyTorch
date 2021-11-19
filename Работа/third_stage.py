@@ -44,11 +44,13 @@ class GraphStructuredR():
             """ #it is already sharpened in mixmatch
             sum1 = 0
             sum2 = 0
+            relu = nn.ReLU()
             for i in range(batch_size):
                 for j in range(batch_size, 2*batch_size):
-                    a1 = nn.ReLU(F.cosine_similarity(self.matr_for_graph[index[i]], self.matr_for_graph[index[j]], dim=0) - self.graph_treshold)
+
+                    a1 = relu(F.cosine_similarity(self.matr_for_graph[index[i]], self.matr_for_graph[index[j]], dim=0) - self.graph_treshold)
                     sum1+=a1*(LA.vector_norm(outputs[j] - targets[i], ord=2)**2)
-                    a2 = nn.ReLU(F.cosine_similarity(self.matr_for_graph[index[i+batch_size]], self.matr_for_graph[index[j]], dim=0) - self.graph_treshold)
+                    a2 = relu(F.cosine_similarity(self.matr_for_graph[index[i+batch_size]], self.matr_for_graph[index[j]], dim=0) - self.graph_treshold)
                     sum2+=a2*(LA.vector_norm(outputs[j] - outputs[i+batch_size], ord=2)**2)
             return self.lamdLU*sum1+self.lamdUU*sum2
 
@@ -84,7 +86,7 @@ def MixMatch(net, data, p_matr, args):
             batch_size = inputs_x.size(0)
 
             # Transform label to one-hot
-            labels_x = torch.zeros(batch_size, args.num_class).scatter_(1, labels_x.view(-1, 1), 1)
+            labels_x = torch.zeros(batch_size, args.num_classes).scatter_(1, labels_x.view(-1, 1), 1)
 
             inputs_x, labels_x, index_x = inputs_x.cuda(), labels_x.cuda(), index_x.cuda()
             inputs_u, index_u = inputs_u.cuda(), index_u.cuda()
