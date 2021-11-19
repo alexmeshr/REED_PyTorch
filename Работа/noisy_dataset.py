@@ -54,5 +54,5 @@ class Noisy_Dataset(Data.Dataset):
     def __len__(self):
         return len(self.data)
 
-    def change_targets(self):
-        pass
+    def change_targets(self, new_targets):
+        self.targets = new_targets

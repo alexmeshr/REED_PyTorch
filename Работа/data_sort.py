@@ -96,21 +96,20 @@ def sort_data(model, dataloader, device, args):
     #plt.show()
     good = 0
     bad = 0
-    correct = dataloader.dataset.original_targets
     new_targets = np.zeros(len(dataloader.dataset.data))
     for i in range(len(dataloader.dataset.data)):
         if p_clean[i] or ((p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
           new_targets[i] = answers[i]
-          if ((not p_clean[i]) and (p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
-            if new_targets[i] == correct[i]:
+          if (args.testing and (not p_clean[i]) and (p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
+            if new_targets[i] == dataloader.dataset.original_targets[i]:
               good+=1
             else:
               bad+=1
         else:
             new_targets[i] = -1
-    print("good: ", good)
-    print("bad: ", bad)
     if args.testing:
+        print("good: ", good)
+        print("bad: ", bad)
         correct = dataloader.dataset.original_targets
         TP = 0
         FP = 0
