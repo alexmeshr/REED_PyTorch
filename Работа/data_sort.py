@@ -17,7 +17,7 @@ def warmup(net , dataloader,device, args):
         loss = CEloss(outputs, labels)
         if args.noise_type == 'symmetric':
             L = loss
-        elif args.noise_type == 'symmetric':
+        elif args.noise_type == 'asymmetric':
             penalty = NegEntropy(outputs)
             L = loss + penalty
         L.backward()
@@ -107,6 +107,10 @@ def sort_data(model, dataloader, device, args):
               bad+=1
         else:
             new_targets[i] = -1
+    acc = 0
+    precision = 0
+    recall = 0
+    F1 = 0
     if args.testing:
         print("good: ", good)
         print("bad: ", bad)
@@ -126,12 +130,13 @@ def sort_data(model, dataloader, device, args):
                     FN += 1
                 else:
                     TN += 1
+        acc = (TP + TN) / len(dataloader.dataset.data)
         precision = TP / (TP + FP)
         recall = TP / (TP + FN)
         F1 = 2 * (recall * precision) / (recall + precision)
-        print("acc: ", TP + TN, (TP + TN) / len(dataloader.dataset.data))
+        print("acc: ", TP + TN, acc)
         print("precision: ", precision)
         print("recall: ", recall)
         print("F1: ", F1)
         model.train(mode=was_training)
-    return model,new_targets, p_array, (TP + TN) / len(dataloader.dataset.data), precision, recall, F1
+    return model,new_targets, p_array, acc, precision, recall, F1
