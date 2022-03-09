@@ -98,20 +98,15 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
         model.train()  # Set model to training mode
         running_loss = 0.0
         running_corrects = 0
-        for inputs, labels, _ in dataloader:
+        for inputs, labels in dataloader:
                 labels = labels.type(torch.LongTensor)
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-
-                # zero the parameter gradients - not done in baseline mode
-                if optimizer:
-                    optimizer.zero_grad()
-
+                optimizer.zero_grad()
                 with torch.set_grad_enabled(True):
                     outputs = model(inputs)
                     _, preds_noise = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
-
                     loss.backward()
                     optimizer.step()
 
@@ -122,7 +117,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
 
         epoch_loss = running_loss / dataset_size
         epoch_acc = running_corrects.double() / dataset_size
-        print('{} Loss: {:.4f} Acc: {:.4f}'.format(epoch_loss, epoch_acc))
+        print('{} Loss: {:.4f} Acc: {:.4f}'.format(epoch, epoch_loss, epoch_acc))
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
