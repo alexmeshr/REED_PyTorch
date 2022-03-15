@@ -94,30 +94,51 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
 
+        phases = ['train']
+
         # Each epoch has a training and validation phase
-        model.train()  # Set model to training mode
-        running_loss = 0.0
-        running_corrects = 0
-        for inputs, labels in dataloader:
+        for phase in phases:
+            if phase == 'train':
+                model.train()  # Set model to training mode
+            else:
+                model.eval()  # Set model to evaluate mode
+            running_loss = 0.0
+            running_corrects = 0
+            # Iterate over data.
+            for inputs, labels,_ in dataloader:
                 labels = labels.type(torch.LongTensor)
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-                optimizer.zero_grad()
-                with torch.set_grad_enabled(True):
+
+                # zero the parameter gradients - not done in baseline mode
+                if optimizer:
+                    optimizer.zero_grad()
+
+                with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     _, preds_noise = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
-                    loss.backward()
-                    optimizer.step()
+
+                    # backward + optimize only if in training phase
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds_noise == labels.data)
+            if phase == 'train':
                 scheduler.step()
 
-        epoch_loss = running_loss / dataset_size
-        epoch_acc = running_corrects.double() / dataset_size
-        print('{} Loss: {:.4f} Acc: {:.4f}'.format(epoch, epoch_loss, epoch_acc))
+            epoch_loss = running_loss / dataset_size
+            epoch_acc = running_corrects.double() / dataset_size
+
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+                phase, epoch_loss, epoch_acc))
+
+            # deep copy the model
+            if phase == 'val' and epoch_acc > best_acc:
+                best_acc = epoch_acc
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
