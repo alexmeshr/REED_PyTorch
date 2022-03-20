@@ -79,22 +79,32 @@ def train_fixed_feature_extractor(model, dataloader, device, params):
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=params.step_size, gamma=params.gamma)
     model_ft = train_model(model, criterion, optimizer, exp_lr_scheduler, dataloader, params.classifier_epochs, device,
-                           params.batch_size)
+                           params.batch_size, params.checkpoint)
     for param in model_ft.parameters():
         param.requires_grad = True
     return model_ft
 
 
-def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size):
+def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size, checkpoint):
     since = time.time()
+    PATH = './checkpoint'
     dataset_size = len(dataloader) * batch_size
     best_acc = 0.0
-
-    for epoch in range(num_epochs):
+    start = 0
+    best_model_wts = copy.deepcopy(model.state_dict())
+    if checkpoint:
+        try:
+            checkpoint = torch.load(PATH)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            start = checkpoint['epoch']
+        except:
+            print('No checkpoints')
+    for epoch in range(start, num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
 
-        phases = ['train']
+        phases = ['train', 'val']
 
         # Each epoch has a training and validation phase
         for phase in phases:
@@ -139,12 +149,19 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
+                best_model_wts = copy.deepcopy(model.state_dict())
+                if checkpoint:
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                    }, PATH)
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
-
+    model.load_state_dict(best_model_wts)
     return model
 
 def validate_model(net, testloader):

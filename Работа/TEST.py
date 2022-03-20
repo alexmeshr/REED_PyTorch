@@ -32,8 +32,8 @@ parser.add_argument('--resnet', help='resnet18 or resnet50', type=str, default='
 parser.add_argument('--noise_type', help='symmetric or asymmetric', type=str, default='symmetric')
 parser.add_argument('--step_size', type=int, default=7)
 parser.add_argument('--gamma', type=float, default=0.1)
-parser.add_argument('--simcrl_epochs', type=int, default=20)
-parser.add_argument('--classifier_epochs', type=int, default=5)  # 25!!!
+parser.add_argument('--simcrl_epochs', type=int, default=1)
+parser.add_argument('--classifier_epochs', type=int, default=1)  # 25!!!
 parser.add_argument('--third_stage_epochs', type=int, default=25)
 parser.add_argument('--num_classes', type=int, default=10)
 parser.add_argument('--noise_rate', type=float, default=0.4)
@@ -58,7 +58,7 @@ parser.add_argument('--MMlamb', type=float, default=0.5)
 parser.add_argument('--lamdLU', type=float, default=0.5)
 parser.add_argument('--lamdUU', type=float, default=0.5)
 parser.add_argument('--graph_treshold', type=float, default=0.5)
-
+parser.add_argument('--checkpoint', type=bool, default=True)
 
 # parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 
