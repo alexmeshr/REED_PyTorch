@@ -20,6 +20,7 @@ class SimCLR(object):
         self.model = kwargs['model'].to(self.device)
         self.optimizer = kwargs['optimizer']
         self.scheduler = kwargs['scheduler']
+        self.checkpoint = self.args.checkpoint
         self.writer = SummaryWriter()
         logging.basicConfig(filename=os.path.join(self.writer.log_dir, 'training.log'), level=logging.DEBUG)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
@@ -55,16 +56,24 @@ class SimCLR(object):
         return logits, labels
 
     def train(self, train_loader):
-
+        PATH = './checkpoint_simcrl'
+        start = 0
         scaler = GradScaler(enabled=True)#optional
-
+        if self.checkpoint:
+            try:
+                checkpoint = torch.load(PATH)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                start = checkpoint['epoch']
+            except:
+                print('No checkpoints')
         # save config file
         save_config_file(self.writer.log_dir, self.args)
 
         n_iter = 0
-        logging.info(f"Start SimCLR training for {self.args.simcrl_epochs} epochs.")
+        logging.info(f"Start SimCLR training for {self.args.simcrl_epochs - start} epochs.")
         
-        for epoch_counter in range(self.args.simcrl_epochs):
+        for epoch_counter in range(self.args.simcrl_epochs - start):
             for images, _ in tqdm(train_loader):
                 images = torch.cat(images, dim=0)
 
@@ -90,6 +99,12 @@ class SimCLR(object):
                     self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
 
                 n_iter += 1
+            if self.checkpoint and epoch_counter %10 == 0:
+                torch.save({
+                    'epoch': epoch_counter,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                }, PATH)
 
             # warmup for the first 10 epochs
             if epoch_counter >= 10:

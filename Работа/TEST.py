@@ -59,7 +59,7 @@ parser.add_argument('--lamdLU', type=float, default=0.5)
 parser.add_argument('--lamdUU', type=float, default=0.5)
 parser.add_argument('--graph_treshold', type=float, default=0.5)
 parser.add_argument('--checkpoint', type=bool, default=True)
-
+parser.add_argument('--log_every_n_steps', type=int, default=5)
 # parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 
 # parser.add_argument('--out_dim', default=128, type=int, help='feature dimension (default: 128)')
@@ -68,6 +68,8 @@ args, unknown = parser.parse_known_args()
 tests = [0.1, 0.3, 0.5, 0.7, 0.8, 0.9]
 
 def test_(args):
+    PATH_TO_SIMCRL = './simcrlnet18'#'/content/drive/MyDrive/Работа/simcrlnet18'
+    PATH_TO_NET = './testnet18_' #'/content/drive/MyDrive/Работа/testnet18_'
     for test in range(6):
         args.noise_rate = tests[test]
         dataset = ContrastiveLearningDataset(root_folder='data/')
@@ -85,10 +87,10 @@ def test_(args):
                                                                last_epoch=-1)
         simclr = SimCLR(device=device, model=model, optimizer=optimizer, scheduler=scheduler, args=args)
         try:
-            simclr.model.backbone.load_state_dict(torch.load('/content/drive/MyDrive/Работа/simcrlnet18'))
+            simclr.model.backbone.load_state_dict(torch.load(PATH_TO_SIMCRL))
         except:
             simclr.train(train_loader)
-            torch.save(simclr.model.backbone.state_dict(), './simcrlnet')
+            torch.save(simclr.model.backbone.state_dict(), PATH_TO_SIMCRL)
         simclr.model.remove_projection_head()
 
         if args.dataset == 'cifar10':
@@ -120,11 +122,11 @@ def test_(args):
                                   drop_last=False)
         classifier = simclr.model.backbone
         try:
-            classifier.load_state_dict(torch.load('/content/drive/MyDrive/Работа/testnet'))
+            classifier.load_state_dict(torch.load(PATH_TO_NET + str(int(test*100))))
             classifier = classifier.to(device)
         except:
             classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
-            torch.save(classifier.state_dict(), './testnet')
+            torch.save(classifier.state_dict(), PATH_TO_NET + str(int(test*100)))
 
         #check_model(classifier, train_loader, device)
         classifier, new_data, p_matr,_,_,_,_ = sort_data(classifier, train_loader, device, args)

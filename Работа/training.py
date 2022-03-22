@@ -87,7 +87,7 @@ def train_fixed_feature_extractor(model, dataloader, device, params):
 
 def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size, checkpoint):
     since = time.time()
-    PATH = './checkpoint'
+    PATH = './checkpoint'#'/content/drive/MyDrive/Работа/checkpoint'
     dataset_size = len(dataloader) * batch_size
     best_acc = 0.0
     start = 0
