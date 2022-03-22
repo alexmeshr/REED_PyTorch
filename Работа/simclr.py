@@ -65,6 +65,7 @@ class SimCLR(object):
                 self.model.load_state_dict(checkpoint['model_state_dict'])
                 self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
                 start = checkpoint['epoch']
+                print('Found checkpoint - ' + str(start))
             except:
                 print('No checkpoints')
         # save config file
@@ -73,7 +74,7 @@ class SimCLR(object):
         n_iter = 0
         logging.info(f"Start SimCLR training for {self.args.simcrl_epochs - start} epochs.")
         
-        for epoch_counter in range(self.args.simcrl_epochs - start):
+        for epoch_counter in range(start, self.args.simcrl_epochs):
             for images, _ in tqdm(train_loader):
                 images = torch.cat(images, dim=0)
 

@@ -8,6 +8,7 @@ from torchvision import datasets, models, transforms
 from transformer import *
 import torch.nn.functional as F
 from training import validate_model
+
 def generate_graph(matr_in, treshold):
     matr_out = [[nn.ReLU(F.cosine_similarity(matr_in[i], matr_in[j], dim=0) - treshold)
                  for j in range(len(matr_in))]for i in range(len(matr_in))]
