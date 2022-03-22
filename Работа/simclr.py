@@ -67,7 +67,9 @@ class SimCLR(object):
                 start = checkpoint['epoch']
                 print('Found checkpoint - ' + str(start))
             except:
-                print('No checkpoints')
+                print('No checkpoints available')
+        else:
+            print('No checkpoints')
         # save config file
         save_config_file(self.writer.log_dir, self.args)
 
