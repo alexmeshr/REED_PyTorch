@@ -90,7 +90,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
     PATH = './checkpoint'#'/content/drive/MyDrive/Работа/checkpoint'
     dataset_size = len(dataloader) * batch_size
     best_acc = 0.0
-    start = 0
+    start = 1
     best_model_wts = copy.deepcopy(model.state_dict())
     if checkpoint:
         try:
@@ -100,8 +100,8 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
             start = checkpoint['epoch']
         except:
             print('No checkpoints')
-    for epoch in range(start, num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+    for epoch in range(start, num_epochs+1):
+        print('Epoch {}/{}'.format(epoch, num_epochs))
         print('-' * 10)
 
         phases = ['train', 'val']

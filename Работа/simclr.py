@@ -57,7 +57,7 @@ class SimCLR(object):
 
     def train(self, train_loader):
         PATH = './checkpoint_simcrl'
-        start = 0
+        start = 1
         scaler = GradScaler(enabled=True)#optional
         if self.checkpoint:
             try:
@@ -74,9 +74,9 @@ class SimCLR(object):
         save_config_file(self.writer.log_dir, self.args)
 
         n_iter = 0
-        logging.info(f"Start SimCLR training for {self.args.simcrl_epochs - start} epochs.")
+        logging.info(f"Start SimCLR training for {self.args.simcrl_epochs - start+1} epochs.")
         
-        for epoch_counter in range(start, self.args.simcrl_epochs):
+        for epoch_counter in range(start, self.args.simcrl_epochs+1):
             for images, _ in tqdm(train_loader):
                 images = torch.cat(images, dim=0)
 
@@ -112,7 +112,7 @@ class SimCLR(object):
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 self.scheduler.step()
-            logging.debug(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
+            print(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
 
         logging.info("Training has finished.")
         # save model checkpoints
