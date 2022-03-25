@@ -56,9 +56,9 @@ class SimCLR(object):
         return logits, labels
 
     def train(self, train_loader):
-        PATH = './checkpoint_simcrl'
+        PATH = './checkpoint_simcrl'  # '/content/drive/MyDrive/Работа/checkpoint_simcrl'
         start = 1
-        scaler = GradScaler(enabled=True)#optional
+        scaler = GradScaler(enabled=True)  # optional
         if self.checkpoint:
             try:
                 checkpoint = torch.load(PATH)
@@ -74,15 +74,16 @@ class SimCLR(object):
         save_config_file(self.writer.log_dir, self.args)
 
         n_iter = 0
-        logging.info(f"Start SimCLR training for {self.args.simcrl_epochs - start+1} epochs.")
-        
-        for epoch_counter in range(start, self.args.simcrl_epochs+1):
+        print(f"Start SimCLR training for {self.args.simcrl_epochs - start + 1} epochs.")
+        best_acc = 0
+        best_model_wts = copy.deepcopy(self.model.state_dict())
+        for epoch_counter in range(start, self.args.simcrl_epochs + 1):
             for images, _ in tqdm(train_loader):
                 images = torch.cat(images, dim=0)
 
                 images = images.to(self.device)
 
-                with autocast(enabled=True): #optional
+                with autocast(enabled=True):  # optional
                     features = self.model(images)
                     logits, labels = self.info_nce_loss(features)
                     loss = self.criterion(logits, labels)
@@ -93,16 +94,19 @@ class SimCLR(object):
 
                 scaler.step(self.optimizer)
                 scaler.update()
-
+                top1 = accuracy(logits, labels)
+                if top1[0] > best_acc:
+                    best_acc = top1[0]
+                best_model_wts = copy.deepcopy(self.model.state_dict())
                 if n_iter % self.args.log_every_n_steps == 0:
-                    top1 = accuracy(logits, labels)#, topk=(1, 5))
+                    # , topk=(1, 5))
                     self.writer.add_scalar('loss', loss, global_step=n_iter)
                     self.writer.add_scalar('acc/top1', top1[0], global_step=n_iter)
-                    #self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
+                    # self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
                     self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
 
                 n_iter += 1
-            if self.checkpoint and epoch_counter %10 == 0:
+            if self.checkpoint and epoch_counter % 10 == 0:
                 torch.save({
                     'epoch': epoch_counter,
                     'model_state_dict': self.model.state_dict(),
@@ -115,13 +119,5 @@ class SimCLR(object):
             print(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
 
         logging.info("Training has finished.")
-        # save model checkpoints
-        checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(self.args.epochs)
-        save_checkpoint({
-            'epoch': self.args.epochs,
-            'arch': 'resnet50',
-            'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-        }, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
-        logging.info(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
+        self.model.load_state_dict(best_model_wts)
     
