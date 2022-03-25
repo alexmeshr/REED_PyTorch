@@ -72,12 +72,13 @@ class SimCLR(object):
             print('No checkpoints')
         # save config file
         save_config_file(self.writer.log_dir, self.args)
-
-        n_iter = 0
-        print(f"Start SimCLR training for {self.args.simcrl_epochs - start + 1} epochs.")
         best_acc = 0
         best_model_wts = copy.deepcopy(self.model.state_dict())
+        n_iter = 0
+        print(f"Start SimCLR training for {self.args.simcrl_epochs - start + 1} epochs.")
         for epoch_counter in range(start, self.args.simcrl_epochs + 1):
+            top1_mean = 0
+            cnt = 0
             for images, _ in tqdm(train_loader):
                 images = torch.cat(images, dim=0)
 
@@ -95,9 +96,8 @@ class SimCLR(object):
                 scaler.step(self.optimizer)
                 scaler.update()
                 top1 = accuracy(logits, labels)
-                if top1[0] > best_acc:
-                    best_acc = top1[0]
-                best_model_wts = copy.deepcopy(self.model.state_dict())
+                top1_mean+=top1[0]
+                cnt+=1
                 if n_iter % self.args.log_every_n_steps == 0:
                     # , topk=(1, 5))
                     self.writer.add_scalar('loss', loss, global_step=n_iter)
@@ -116,8 +116,9 @@ class SimCLR(object):
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 self.scheduler.step()
-            print(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
-
+            print(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 mean accuracy: {top1_mean/cnt}")
+            if top1_mean/cnt > best_acc:
+                best_acc = top1_mean/cnt
+            best_model_wts = copy.deepcopy(self.model.state_dict())
         logging.info("Training has finished.")
         self.model.load_state_dict(best_model_wts)
-    
