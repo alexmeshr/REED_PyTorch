@@ -68,8 +68,9 @@ args, unknown = parser.parse_known_args()
 tests = [0.1, 0.3, 0.5, 0.7, 0.8, 0.9]
 
 def test_(args):
-    PATH_TO_SIMCRL = './simcrlnet18'#'/content/drive/MyDrive/Работа/simcrlnet18'
-    PATH_TO_NET = './testnet18_' #'/content/drive/MyDrive/Работа/testnet18_'
+    PATH_TO_SIMCRL = 'C:\\Users\\alexm\\REED_PyTorch\\Работа\\simcrlnet18old'  # '/content/drive/MyDrive/Работа/simcrlnet18'
+    PATH_TO_NET = 'C:\\Users\\alexm\\REED_PyTorch\\Работа\\testnet18-400_'  # content/drive/MyDrive/Работа/testnet18_'
+    PATH_TO_CL = './classifier_prev-400'
     for test in range(6):
         args.noise_rate = tests[test]
         dataset = ContrastiveLearningDataset(root_folder='data/')
@@ -122,16 +123,26 @@ def test_(args):
                                   drop_last=False)
         classifier = simclr.model.backbone
         try:
-            classifier.load_state_dict(torch.load(PATH_TO_NET + str(int(test*100))))
+            classifier.load_state_dict(torch.load(PATH_TO_NET + str(int(tests[test]*100))))
             classifier = classifier.to(device)
         except:
             classifier = train_fixed_feature_extractor(simclr.model.backbone, train_loader, device, args)
-            torch.save(classifier.state_dict(), PATH_TO_NET + str(int(test*100)))
+            torch.save(classifier.state_dict(), PATH_TO_NET + str(int(tests[test]*100)))
 
-        #check_model(classifier, train_loader, device)
-        classifier, new_data, p_matr,_,_,_,_ = sort_data(classifier, train_loader, device, args)
+        new_data = []
+        h_matr = []
+        try:
+            new_data = np.int64(np.loadtxt('new_data', dtype=int))
+            h_matr = torch.tensor(np.float64(np.loadtxt('h_matr', dtype=float)))
+            classifier.load_state_dict(torch.load(PATH_TO_CL + str(int(tests[test] * 100))))
+        except:
+            classifier, new_data, h_matr, a, p, r, f = sort_data(classifier, train_loader, device, args)
+            print(a, p, r, f)
+            np.savetxt('new_data', new_data, fmt='%d')
+            np.savetxt('h_matr', h_matr, fmt='%f')
+            torch.save(classifier.state_dict(), PATH_TO_CL + str(int(tests[test] * 100)))
         train_data.change_targets(new_targets=new_data)
-        classifier = MixMatch(classifier, train_data, p_matr, args, test_loader)
-        validate_model(classifier, test_loader)
+        new_classifier = MixMatch(classifier, train_data, h_matr, args, test_loader, True)
+        validate_model(new_classifier, test_loader)
 if __name__ == "__main__":
   test_(args)

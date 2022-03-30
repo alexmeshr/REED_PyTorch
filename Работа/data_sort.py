@@ -28,9 +28,10 @@ class NegEntropy(object):
         probs = torch.softmax(outputs, dim=1)
         return torch.mean(torch.sum(probs.log()*probs, dim=1))
 
-def sort_data(model, dataloader, device, args):
+
+def sort_data(model, dataloader, device, args, size_of_embedding=512):
     model = model.to(device)
-    print("new9")
+    print("new11")
     for i in range(args.warm_up):
         print("  ", i)
         warmup(model, dataloader, device, args)
@@ -43,11 +44,23 @@ def sort_data(model, dataloader, device, args):
     p_max = torch.zeros(len(dataloader.dataset.data))
     answers = torch.zeros(len(dataloader.dataset.data))
     p_array = torch.zeros((len(dataloader.dataset.data), args.num_classes), dtype=torch.float32)
+    h_array = torch.zeros((len(dataloader.dataset.data), size_of_embedding), dtype=torch.float32)
+
+    my_embedding = torch.zeros(512)
+    layer = model._modules.get('avgpool')
+
+    def copy_data(m, i, o):
+        my_embedding.copy_(o.data.reshape(o.data.size(1)))
+
+    h = layer.register_forward_hook(copy_data)
+
     with torch.no_grad():
-        p_index = 0
         for inputs, targets, index in dataloader:
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
+            outputs = torch.zeros((inputs.size(0), args.num_classes), dtype=torch.float32)
+            for b in range(inputs.size(0)):
+                outputs[b] = model(Variable(inputs[b].unsqueeze(0)))
+                h_array[index[b]] = my_embedding.clone().detach()
             outputs_p = torch.softmax(outputs, dim=1)
             outputs = torch.tensor(outputs).to(device)
             loss = CE(outputs, targets)
@@ -59,8 +72,8 @@ def sort_data(model, dataloader, device, args):
                 p_array[index[b]] = outputs_p[b]
                 p_max[index[b]] = predictions[b]
                 answers[index[b]] = nums[b]
+    h.remove()
     # p_i = [i[i!=0] for i in p_i]
-    print(p_array)
     losses = (losses - losses.min()) / (losses.max() - losses.min())
     input_loss = losses.reshape(-1, 1)
     # p_i = [i.reshape(-1,1) for i in p_i]
@@ -86,25 +99,25 @@ def sort_data(model, dataloader, device, args):
     m = np.array([np.mean(x) for x in gmm2.means_])
     prob2 = prob2[:, m.argmin()]
     p_right = (prob2 > args.p_right)
-    #p_wrong = (prob2 <= args.p_right)
-    #print("p_right: ", prob2)
-    #fig, ax2 = plt.subplots(1, 1, figsize=(10, 8))
-    #x = [x for x in range(1000)]
-    #ax2.scatter(x=x, y=p_max[p_right][:1000], c='y', label='p_right')
-    #ax2.scatter(x=x, y=p_max[p_wrong][:1000], c='b', label='not p_right')
-    #plt.legend(loc='lower right')
-    #plt.show()
+    # p_wrong = (prob2 <= args.p_right)
+    # print("p_right: ", prob2)
+    # fig, ax2 = plt.subplots(1, 1, figsize=(10, 8))
+    # x = [x for x in range(1000)]
+    # ax2.scatter(x=x, y=p_max[p_right][:1000], c='y', label='p_right')
+    # ax2.scatter(x=x, y=p_max[p_wrong][:1000], c='b', label='not p_right')
+    # plt.legend(loc='lower right')
+    # plt.show()
     good = 0
     bad = 0
-    new_targets = np.empty([len(dataloader.dataset.data)],dtype=np.int64)
+    new_targets = np.empty([len(dataloader.dataset.data)], dtype=np.int64)
     for i in range(len(dataloader.dataset.data)):
         if p_clean[i] or ((p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
-          new_targets[i] = answers[i]
-          if (args.testing and (not p_clean[i]) and (p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
-            if new_targets[i] == dataloader.dataset.original_targets[i]:
-              good+=1
-            else:
-              bad+=1
+            new_targets[i] = answers[i]
+            if (args.testing and (not p_clean[i]) and (p_right[i]) and (answers[i] == dataloader.dataset.targets[i])):
+                if new_targets[i] == dataloader.dataset.original_targets[i]:
+                    good += 1
+                else:
+                    bad += 1
         else:
             new_targets[i] = -1
     acc = 0
@@ -139,4 +152,4 @@ def sort_data(model, dataloader, device, args):
         print("recall: ", recall)
         print("F1: ", F1)
         model.train(mode=was_training)
-    return model,new_targets, p_array, acc, precision, recall, F1
+    return model, new_targets, h_array, acc, precision, recall, F1
