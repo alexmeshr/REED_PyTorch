@@ -41,7 +41,7 @@ class Noisy_Dataset(Data.Dataset):
             img, target = self.data[index], self.targets[index]
         else:
             img, target = self.data[index], self.original_targets[index]
-        img = Image.fromarray(img.numpy(), mode='L')
+        img = Image.fromarray(img)
 
         if self.transform is not None:
             img = self.transform(img)
