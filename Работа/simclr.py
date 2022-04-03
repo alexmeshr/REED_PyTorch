@@ -55,8 +55,8 @@ class SimCLR(object):
         logits = logits / 0.07 #softmax temperature (default: 0.07)
         return logits, labels
 
-    def train(self, train_loader):
-        PATH = './checkpoint_simcrl'  # '/content/drive/MyDrive/Работа/checkpoint_simcrl'
+    def train(self, train_loader, PATH = './checkpoint_simcrl'):
+        # '/content/drive/MyDrive/Работа/checkpoint_simcrl'
         start = 1
         scaler = GradScaler(enabled=True)  # optional
         if self.checkpoint:

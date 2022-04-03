@@ -59,7 +59,7 @@ def sort_data(model, dataloader, device, args, size_of_embedding=512):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = torch.zeros((inputs.size(0), args.num_classes), dtype=torch.float32)
             for b in range(inputs.size(0)):
-                outputs[b] = model(Variable(inputs[b].unsqueeze(0)))
+                outputs[b] = model(inputs[b].unsqueeze(0))
                 h_array[index[b]] = my_embedding.clone().detach()
             outputs_p = torch.softmax(outputs, dim=1)
             outputs = torch.tensor(outputs).to(device)

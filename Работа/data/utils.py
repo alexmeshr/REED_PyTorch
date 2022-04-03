@@ -5,6 +5,7 @@ import hashlib
 import errno
 import numpy as np
 from numpy.testing import assert_array_almost_equal
+from torchvision.transforms import transforms
 
 def check_integrity(fpath, md5):
     if not os.path.isfile(fpath):
@@ -177,3 +178,14 @@ def noisify(dataset='mnist', nb_classes=10, train_labels=None, noise_type=None, 
     if noise_type == 'symmetric':
         train_noisy_labels, actual_noise_rate = noisify_multiclass_symmetric(train_labels, noise_rate, random_state=0, nb_classes=nb_classes)
     return train_noisy_labels, actual_noise_rate
+
+def get_color_distortion(s=1.0):
+    # s is the strength of color distortion.
+    # given from https://arxiv.org/pdf/2002.05709.pdf
+    color_jitter = transforms.ColorJitter(0.8*s, 0.8*s, 0.8*s, 0.2*s)
+    rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
+    rnd_gray = transforms.RandomGrayscale(p=0.2)
+    color_distort = transforms.Compose([
+        rnd_color_jitter,
+        rnd_gray])
+    return color_distort

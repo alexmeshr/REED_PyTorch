@@ -8,6 +8,7 @@ import shutil
 import yaml
 import torch
 from numpy.testing import assert_array_almost_equal
+from torchvision.transforms import transforms
 # basic function
 def multiclass_noisify(y, P, random_state):
     """ Flip classes according to transition probability matrix T.
@@ -118,3 +119,18 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+def get_color_distortion(s=1.0):
+    # s is the strength of color distortion.
+    # given from https://arxiv.org/pdf/2002.05709.pdf
+    color_jitter = transforms.ColorJitter(0.8*s, 0.8*s, 0.8*s, 0.2*s)
+    rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
+    rnd_gray = transforms.RandomGrayscale(p=0.2)
+    color_distort = transforms.Compose([
+        rnd_color_jitter,
+        rnd_gray])
+    return color_distort
+
+class Clip(object):
+    def __call__(self, x):
+        return torch.clamp(x, 0, 1)
