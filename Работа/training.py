@@ -11,6 +11,7 @@ import copy
 import random
 from data import *
 import numpy as np
+from tqdm import tqdm
 
 def check_model(model, dataloader, device):
     was_training = model.training
@@ -79,18 +80,20 @@ def train_fixed_feature_extractor(model, dataloader, device, params):
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=params.step_size, gamma=params.gamma)
     model_ft = train_model(model, criterion, optimizer, exp_lr_scheduler, dataloader, params.classifier_epochs, device,
-                           params.batch_size, params.checkpoint)
+                           params.batch_size, params)
     for param in model_ft.parameters():
         param.requires_grad = True
     return model_ft
 
 
-def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size, checkpoint):
+def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size, params):
+    checkpoint = params.checkpoint
+    noise = params.noise_rate
     since = time.time()
-    PATH = './checkpoint'#'/content/drive/MyDrive/Работа/checkpoint'
+    PATH = './checkpoint_18_'  + str(int(noise*100)) #'/content/drive/MyDrive/Работа/checkpoint'
     dataset_size = len(dataloader) * batch_size
     best_acc = 0.0
-    start = 1
+    start = 0
     best_model_wts = copy.deepcopy(model.state_dict())
     if checkpoint:
         try:
@@ -100,11 +103,11 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
             start = checkpoint['epoch']
         except:
             print('No checkpoints')
-    for epoch in range(start, num_epochs+1):
-        print('Epoch {}/{}'.format(epoch, num_epochs))
+    for epoch in range(start, num_epochs):
+        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
 
-        phases = ['train', 'val']
+        phases = ['train']
 
         # Each epoch has a training and validation phase
         for phase in phases:
@@ -115,7 +118,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
             running_loss = 0.0
             running_corrects = 0
             # Iterate over data.
-            for inputs, labels,_ in dataloader:
+            for inputs, labels,_ in  tqdm(dataloader):
                 labels = labels.type(torch.LongTensor)
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -145,9 +148,12 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
-
+            if abs(epoch_acc - best_acc) <= 0.01 and (epoch)%params.reduce_lr_steps==0:
+                for g in optimizer.param_groups:
+                    g['lr'] = g['lr']/2
+                print('lr set to ', optimizer.param_groups[0]['lr'])
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
+            if epoch_acc > best_acc:#phase == 'val' and
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
                 if checkpoint:
