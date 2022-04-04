@@ -6,7 +6,7 @@ from utils import noisify
 
 class Noisy_Dataset(Data.Dataset):
     def __init__(self, original_dataset, dataset_name="", transform=None, target_transform=None, noise_type='symmetric',
-                 noise_rate=0.2, random_state=0, num_classes=10, clear_labels=None):
+                 noise_rate=0.2, random_state=0, num_classes=10, clear_labels=None, mode='RGB'):
 
         self.transform = transform
         self.target_transform = target_transform
@@ -18,6 +18,7 @@ class Noisy_Dataset(Data.Dataset):
         self.clear_labels = clear_labels
         self.dataset_name = dataset_name
         self.noise_rate = noise_rate
+        self.mode = mode
         # self.data, self.val_data, self.targets, self.val_labels = tools.dataset_split(original_images, original_labels, noise_rate, split_per, random_seed, num_class)
         if noise_type != 'clean' and noise_rate > 0:
             self.targets = np.asarray([[self.targets[i]] for i in range(len(self.targets))])
@@ -41,8 +42,10 @@ class Noisy_Dataset(Data.Dataset):
             img, target = self.data[index], self.targets[index]
         else:
             img, target = self.data[index], self.original_targets[index]
-        img = Image.fromarray(img)
-
+        if self.mode == 'L':
+            img = Image.fromarray(img.numpy(), mode='L')
+        else:
+            img = Image.fromarray(img)
         if self.transform is not None:
             img = self.transform(img)
 

@@ -12,6 +12,9 @@ import random
 from data import *
 import numpy as np
 from tqdm import tqdm
+import robust_loss_pytorch.general
+from torch.autograd import Variable
+from robust_loss_pytorch import AdaptiveLossFunction
 
 def check_model(model, dataloader, device):
     was_training = model.training
@@ -86,11 +89,13 @@ def train_fixed_feature_extractor(model, dataloader, device, params):
     return model_ft
 
 
-def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size, params):
+def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, device, batch_size, params, PATH=None):
     checkpoint = params.checkpoint
     noise = params.noise_rate
     since = time.time()
-    PATH = './checkpoint_18_'  + str(int(noise*100)) #'/content/drive/MyDrive/Работа/checkpoint'
+    adaptive = AdaptiveLossFunction(num_dims = params.num_classes, float_dtype=torch.float32, device=device)
+    if PATH is None:
+        PATH = './checkpoint_18_'  + str(int(noise*100)) #'/content/drive/MyDrive/Работа/checkpoint'
     dataset_size = len(dataloader) * batch_size
     best_acc = 0.0
     start = 0
@@ -130,8 +135,11 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     _, preds_noise = torch.max(outputs, 1)
-                    loss = criterion(outputs, labels)
-
+                    if(params.robust):
+                        answ = torch.nn.functional.one_hot(labels, num_classes=params.num_classes)
+                        loss =  torch.mean(adaptive.lossfun((outputs-answ)))
+                    else:
+                        loss = criterion(outputs, labels)
                     # backward + optimize only if in training phase
                     if phase == 'train':
                         loss.backward()
@@ -175,7 +183,7 @@ def validate_model(net, testloader):
         total = 0
         # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
-            for data in testloader:
+            for data in tqdm(testloader):
                 images, labels = data
                 images, labels = images.cuda(), labels.cuda()
                 # calculate outputs by running images through the network
