@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torchvision.models as models
 from models.resnet import resnet50, resnet18
-from models.resnet_cifar import ResNet50, ResNet18
+from models.resnet_classic import ResNet50, ResNet18
 from exceptions.exceptions import InvalidBackboneError
 
 
