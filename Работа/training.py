@@ -154,12 +154,8 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, num_epochs, 
             epoch_loss = running_loss / dataset_size
             epoch_acc = running_corrects.double() / dataset_size
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
-            if abs(epoch_acc - best_acc) <= 0.01 and (epoch)%params.reduce_lr_steps==0:
-                for g in optimizer.param_groups:
-                    g['lr'] = g['lr']/2
-                print('lr set to ', optimizer.param_groups[0]['lr'])
+            print('{} Loss: {:.4f} Acc: {:.4f} Lr: {}'.format(
+                phase, epoch_loss, epoch_acc,optimizer.param_groups[0]['lr']))
             # deep copy the model
             if epoch_acc > best_acc:#phase == 'val' and
                 best_acc = epoch_acc
